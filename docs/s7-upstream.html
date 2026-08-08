@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MapleSure S7 — Upstream: agree what "done" means</title>
+<style>
+  :root {
+    --bg: #0e1116; --card: #171c24; --card-2: #1d232e;
+    --ink: #eef2f7; --soft: #9aa7b8; --line: #2a3341; --line-2: #3a4556;
+    --accent: #e04f4f; --accent-soft: #ff8e6e;
+    --ok: #4fae7c; --warn: #d9a13c; --blue: #5b9dd9;
+    --ok-bg: rgba(79,174,124,.10); --warn-bg: rgba(217,161,60,.10); --red-bg: rgba(224,79,79,.10);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--ink);
+         font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif; line-height: 1.5; }
+  .page { max-width: 1080px; margin: 0 auto; padding: 48px clamp(18px, 4vw, 48px) 80px; }
+  .kicker { font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--accent-soft); font-weight: 700; }
+  h1 { font-size: clamp(26px, 4.5vw, 42px); line-height: 1.12; margin: 8px 0 10px; }
+  .lede { color: var(--soft); max-width: 74ch; font-size: 15.5px; }
+  section { margin-top: 54px; }
+  h2 { font-size: clamp(18px, 2.6vw, 24px); margin-bottom: 14px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .b { display: inline-block; font-size: 10px; font-weight: 800; letter-spacing: .07em;
+       padding: 2px 9px; border-radius: 999px; white-space: nowrap; }
+  .b.live { background: var(--ok-bg); color: var(--ok); border: 1px solid var(--ok); }
+  .b.gate { background: var(--red-bg); color: var(--accent-soft); border: 1px solid var(--accent); }
+
+  .svgwrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: #10151c; padding: 12px; }
+  .svgwrap svg { display: block; min-width: 820px; width: 100%; height: auto; }
+
+  .flow-wrap { overflow-x: auto; padding-bottom: 6px; }
+  .flow { display: flex; align-items: stretch; min-width: 780px; }
+  .node { flex: 1; min-width: 130px; background: var(--card); border: 1.5px solid var(--line);
+          border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 6px; }
+  .node.gatebox { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(224,79,79,.15); }
+  .node .t { font-weight: 700; font-size: 14px; }
+  .node .d { color: var(--soft); font-size: 12px; line-height: 1.45; }
+  .node .icon { font-size: 18px; }
+  .arr { flex: 0 0 34px; display: flex; align-items: center; justify-content: center;
+         color: var(--line-2); font-size: 22px; font-weight: 700; }
+  .arr.red { color: var(--accent); }
+
+  .strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+  .who { border-radius: 12px; padding: 14px 16px; border: 1.5px solid var(--line); background: var(--card); }
+  .who .t { font-weight: 700; font-size: 13.5px; }
+  .who .d { color: var(--soft); font-size: 12.5px; margin-top: 4px; line-height: 1.55; }
+
+  .contract { margin-top: 22px; border: 1.5px solid var(--warn); background: var(--warn-bg);
+              border-radius: 14px; padding: 18px 22px; }
+  .contract .t { font-weight: 800; font-size: 14px; color: var(--warn); letter-spacing: .05em; }
+  .contract .d { color: var(--soft); font-size: 13px; margin-top: 6px; line-height: 1.6; }
+  code { font-family: ui-monospace, Menlo, monospace; font-size: 12px; color: var(--accent-soft); }
+  .caption { color: var(--soft); font-size: 12.5px; margin-top: 10px; }
+  .footnote { margin-top: 60px; color: #5f6b7c; font-size: 12px; border-top: 1px solid var(--line); padding-top: 16px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="kicker">MapleSure Insurance · S7 · upstream</div>
+    <h1>Upstream — agree what "done" means.<br><span style="color:var(--accent-soft)">Before anything gets built.</span></h1>
+    <p class="lede">The upstream loop's only product is a <b>definition of success</b> — not code, not
+    designs: signed, testable acceptance criteria. It runs live today, end to end, on real model calls.</p>
+  </header>
+
+  <section>
+    <h2>The loop <span class="b live">LIVE</span></h2>
+    <div class="svgwrap">
+    <svg viewBox="0 0 960 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Upstream loop">
+      <defs>
+        <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#5f6b7c"/></marker>
+        <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#d9a13c"/></marker>
+        <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#e04f4f"/></marker>
+      </defs>
+
+      <rect x="20" y="75" width="140" height="66" rx="10" fill="#171c24" stroke="#2a3341"/>
+      <text x="90" y="104" fill="#eef2f7" font-size="13.5" text-anchor="middle" font-weight="700">Epic in</text>
+      <text x="90" y="121" fill="#9aa7b8" font-size="10.5" text-anchor="middle">the business ask</text>
+      <path d="M 160 108 H 208" stroke="#5f6b7c" stroke-width="1.6" fill="none" marker-end="url(#a1)"/>
+
+      <rect x="210" y="30" width="470" height="160" rx="14" fill="none" stroke="#d9a13c" stroke-dasharray="6 5"/>
+      <text x="445" y="22" fill="#d9a13c" font-size="11" text-anchor="middle" letter-spacing="2">THE ARGUE LOOP ↺ capped · every round logged</text>
+
+      <rect x="240" y="75" width="180" height="66" rx="10" fill="#171c24" stroke="#5b9dd9"/>
+      <text x="330" y="100" fill="#eef2f7" font-size="13.5" text-anchor="middle" font-weight="700">AI drafts &amp; asks</text>
+      <text x="330" y="118" fill="#9aa7b8" font-size="10.5" text-anchor="middle">questions · plan · revision</text>
+
+      <rect x="470" y="75" width="180" height="66" rx="10" fill="#171c24" stroke="#d9a13c"/>
+      <text x="560" y="100" fill="#eef2f7" font-size="13.5" text-anchor="middle" font-weight="700">Human pushes back</text>
+      <text x="560" y="118" fill="#9aa7b8" font-size="10.5" text-anchor="middle">answers · edits · feedback</text>
+
+      <path d="M 420 90 H 468" stroke="#5f6b7c" stroke-width="1.6" fill="none" marker-end="url(#a1)"/>
+      <path d="M 468 126 H 422" stroke="#d9a13c" stroke-width="1.6" fill="none" marker-end="url(#a2)"/>
+
+      <path d="M 680 108 H 738" stroke="#e04f4f" stroke-width="1.8" fill="none" marker-end="url(#a3)"/>
+      <rect x="740" y="65" width="200" height="86" rx="12" fill="rgba(224,79,79,.08)" stroke="#e04f4f" stroke-width="2"/>
+      <text x="840" y="95" fill="#ff8e6e" font-size="13" text-anchor="middle" font-weight="800">GATE 1 — human signs</text>
+      <text x="840" y="114" fill="#eef2f7" font-size="11.5" text-anchor="middle">what "done" means</text>
+      <text x="840" y="131" fill="#9aa7b8" font-size="10.5" text-anchor="middle">named · noted · locked</text>
+
+      <text x="480" y="210" fill="#5f6b7c" font-size="11" text-anchor="middle">The AI never asks forever (2 rounds max) and never revises forever (2 revisions max) — every round is on the record.</text>
+    </svg>
+    </div>
+  </section>
+
+  <section>
+    <h2>The five beats, in order</h2>
+    <div class="flow-wrap">
+      <div class="flow">
+        <div class="node"><span class="icon">📄</span><span class="t">1 · Epic in</span>
+          <span class="d">Paste, upload or drag the business epic into the app.</span></div>
+        <div class="arr">→</div>
+        <div class="node"><span class="icon">💬</span><span class="t">2 · AI clarifies</span>
+          <span class="d">Asks only questions that change the plan. Unanswered ones become <b>stated
+          assumptions</b>, visible on the stories they affect.</span></div>
+        <div class="arr">→</div>
+        <div class="node"><span class="icon">🗂</span><span class="t">3 · Draft plan</span>
+          <span class="d">Requirements inventory first, then stories with acceptance criteria, estimates,
+          owners and sprints. A DRAFT badge until a human signs.</span></div>
+        <div class="arr">→</div>
+        <div class="node"><span class="icon">🧑‍💼</span><span class="t">4 · Human shapes</span>
+          <span class="d">Reassign leads, re-estimate, move stories between sprints — or send the whole
+          draft back with feedback for an AI revision.</span></div>
+        <div class="arr red">→</div>
+        <div class="node gatebox"><span class="icon">✍️</span><span class="t">5 · Sign-off <span class="b gate">GATE 1</span></span>
+          <span class="d">A named approver and a note. The plan locks; the server refuses every later edit.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>What leaves the loop</h2>
+    <div class="contract">
+      <div class="t">THE CONTRACT — signed acceptance criteria</div>
+      <div class="d">Written to <code>plan.json</code> (the machine handoff) and <code>plan.md</code>
+      (the signed, readable record). Downstream <b>cannot finish</b> until these criteria are provably met,
+      and nobody can quietly change them after sign-off — a wrong criterion means a new upstream round,
+      on the record.</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Why this beats "epic → stories" in one hop</h2>
+    <div class="strip">
+      <div class="who"><div class="t">1 · Unknowns become visible</div>
+        <div class="d">A one-hop breakdown silently guesses at everything the epic leaves open. Here every
+        open question is a stated assumption the room can see.</div></div>
+      <div class="who"><div class="t">2 · Coverage is proven, not claimed</div>
+        <div class="d">Every requirement must be claimed by a story — computed from ids. "Did we miss
+        anything?" is answered by a table, not a feeling.</div></div>
+      <div class="who"><div class="t">3 · A human owns the result</div>
+        <div class="d">Nothing reaches execution unsigned. The plan carries a name, a timestamp and a
+        review trail — that is what makes the automation after it defensible.</div></div>
+    </div>
+  </section>
+
+  <p class="footnote">MapleSure Insurance is a fictional insurer. All data is synthetic. Companion pages:
+  <b>s7-downstream.html</b> (execution) · <b>s7-architecture.html</b> (the full picture).</p>
+</div>
+</body>
+</html>

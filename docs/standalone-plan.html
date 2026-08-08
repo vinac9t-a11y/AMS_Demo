@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>S7 Standalone Demo — Build Plan</title>
+<style>
+/* ------------------------------------------------------------------ *
+ * S7 Standalone Demo — build plan. Print stylesheet.
+ * Accent shifted to teal to distinguish this from the delivery pack.
+ * ------------------------------------------------------------------ */
+@page { size: A4; margin: 14mm 13mm 15mm; }
+@page :first { margin: 0; }
+
+:root {
+  --ink:#0f2136; --ink-2:#2c4a68; --muted:#5a6b7d; --line:#dde3ea;
+  --navy:#0e3330; --teal:#1d6b60; --teal-2:#2f9585; --blue:#2f6fb0;
+  --amber:#b8791f; --red:#b04a3e; --slate:#5b6b7f;
+  --wash:#f5faf8; --wash-2:#e9f4f1;
+}
+* { box-sizing:border-box; }
+body {
+  font-family:-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;
+  font-size:9.9pt; line-height:1.5; color:var(--ink); margin:0;
+  -webkit-print-color-adjust:exact; print-color-adjust:exact;
+}
+h1,h2,h3 { margin:0; }
+p { margin:0 0 3mm; }
+code {
+  font-family:"SF Mono",Menlo,Consolas,monospace; font-size:8.3pt;
+  background:#eaf2f0; padding:.4mm 1.1mm; border-radius:2px; color:#14504a;
+}
+.small { font-size:8.6pt; color:var(--muted); }
+b.hl { color:var(--teal); }
+
+/* --- cover --------------------------------------------------------- */
+.cover {
+  height:297mm; background:linear-gradient(155deg,#0e3330 0%,#12514a 50%,#1f7d70 100%);
+  color:#fff; padding:26mm 20mm; display:flex; flex-direction:column; break-after:page;
+}
+.cover .eyebrow { letter-spacing:3px; font-size:8.6pt; text-transform:uppercase; opacity:.72; }
+.cover h1 { font-size:33pt; line-height:1.1; margin:5mm 0 3mm; letter-spacing:-.6px; }
+.cover .sub { font-size:12.6pt; opacity:.9; font-weight:300; max-width:132mm; }
+.cover .rule { width:26mm; height:2.5px; background:#7fd8c6; margin:8mm 0; }
+.cover .meta { margin-top:auto; font-size:9pt; opacity:.85; }
+.cover .meta strong { display:block; font-size:10.5pt; opacity:1; margin-bottom:1mm; }
+.cover-tiles { display:flex; gap:4mm; margin-top:10mm; }
+.cover-tile {
+  flex:1; background:rgba(255,255,255,.11); border:1px solid rgba(255,255,255,.2);
+  border-radius:3px; padding:4mm;
+}
+.cover-tile .n { font-size:18pt; font-weight:600; line-height:1; }
+.cover-tile .l { font-size:7.4pt; text-transform:uppercase; letter-spacing:.7px; opacity:.8; margin-top:2mm; }
+
+/* --- structure ------------------------------------------------------ */
+section { break-before:page; }
+section.first { break-before:auto; }
+h2 {
+  font-size:15pt; color:var(--navy); padding-bottom:2mm;
+  border-bottom:2.5px solid var(--teal); margin-bottom:4mm;
+}
+h2 .num {
+  display:inline-block; background:var(--teal); color:#fff; font-size:9pt;
+  width:6.5mm; height:6.5mm; line-height:6.5mm; text-align:center;
+  border-radius:50%; margin-right:2.5mm; vertical-align:1px;
+}
+h3 { font-size:11pt; color:var(--ink-2); margin:5mm 0 2.2mm; break-after:avoid; }
+.lede { font-size:10.6pt; color:var(--ink-2); margin-bottom:4mm; }
+
+/* --- callout -------------------------------------------------------- */
+.callout {
+  background:var(--wash-2); border-left:3.5px solid var(--teal);
+  padding:3mm 4mm; border-radius:0 3px 3px 0; margin:0 0 4mm; break-inside:avoid;
+}
+.callout.warn { background:#fdf5e8; border-left-color:var(--amber); }
+.callout.stop { background:#fbecea; border-left-color:var(--red); }
+.callout .t { font-weight:600; color:var(--navy); margin-bottom:1mm; }
+.callout p:last-child { margin-bottom:0; }
+
+/* --- tables --------------------------------------------------------- */
+table { width:100%; border-collapse:collapse; margin:0 0 4mm; font-size:8.7pt; }
+thead { display:table-header-group; }
+tr { break-inside:avoid; }
+th { background:var(--navy); color:#fff; text-align:left; padding:2mm 2.4mm; font-weight:600; }
+td { padding:1.9mm 2.4mm; border:1px solid var(--line); vertical-align:top; }
+tbody tr:nth-child(even) td { background:var(--wash); }
+td.c, th.c { text-align:center; }
+.yes { color:var(--teal); font-weight:700; }
+.no  { color:var(--red);  font-weight:700; }
+.part{ color:var(--amber);font-weight:700; }
+
+/* --- pills ---------------------------------------------------------- */
+.pill {
+  display:inline-block; font-size:7.2pt; font-weight:700; letter-spacing:.4px;
+  text-transform:uppercase; padding:.8mm 2mm; border-radius:8px; white-space:nowrap;
+}
+.pill.go   { background:#d5ece6; color:#14504a; }
+.pill.new  { background:#dbe9f7; color:#1d4e80; }
+.pill.warn { background:#fdf0d3; color:#8a5a12; }
+.pill.stop { background:#fbe0dc; color:#8f3129; }
+
+/* --- size bars ------------------------------------------------------ */
+.sizebars { margin-bottom:4mm; break-inside:avoid; }
+.sb { margin-bottom:2.8mm; }
+.sb-top { display:flex; justify-content:space-between; font-size:8.8pt; margin-bottom:1mm; }
+.sb-top b { color:var(--navy); }
+.sb-bar { height:5mm; background:#eef2f6; border-radius:3px; overflow:hidden; }
+.sb-bar i { display:block; height:100%; border-radius:3px; }
+
+/* --- architecture diagram ------------------------------------------- */
+.arch { border:1px solid var(--line); border-radius:4px; padding:4mm; background:var(--wash);
+        margin-bottom:4mm; break-inside:avoid; }
+.arch-row { display:flex; gap:3mm; align-items:stretch; }
+.box {
+  flex:1; background:#fff; border:1px solid var(--line); border-radius:3px;
+  padding:2.6mm 3mm; font-size:8.5pt; text-align:center;
+}
+.box b { display:block; color:var(--navy); font-size:9pt; margin-bottom:.6mm; }
+.box span { color:var(--muted); font-size:7.8pt; }
+.box.src { background:var(--navy); color:#fff; border-color:var(--navy); }
+.box.src b, .box.src span { color:#fff; }
+.box.t1 { border-color:var(--blue); border-width:1.5px; }
+.box.t2 { border-color:var(--teal); border-width:1.5px; }
+.down { text-align:center; color:var(--teal); font-size:12pt; line-height:1; margin:1.6mm 0; }
+.split { display:flex; gap:3mm; margin-top:1.6mm; }
+
+/* --- phases ---------------------------------------------------------- */
+.phase {
+  border:1px solid var(--line); border-left:4px solid var(--teal); border-radius:0 4px 4px 0;
+  padding:3.2mm 4mm; margin-bottom:3.4mm; break-inside:avoid; background:#fff;
+}
+.phase-h { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:1.4mm; }
+.phase-h b { font-size:11pt; color:var(--navy); }
+.phase-h .est { font-size:8.2pt; color:var(--muted); }
+.phase ul { margin:1.6mm 0 2mm; padding-left:5mm; }
+.phase li { margin-bottom:1mm; font-size:8.8pt; }
+.exit { background:var(--wash-2); border-radius:3px; padding:2.2mm 3mm; font-size:8.5pt; }
+.exit b { color:var(--teal); text-transform:uppercase; font-size:7.4pt;
+          letter-spacing:.5px; display:block; margin-bottom:.8mm; }
+
+/* Mock-up of the banner the bundle would carry. Rendered as real elements
+   rather than ASCII art — box-drawing characters and em-dashes do not share
+   a width in every monospace face, so the borders break in print. */
+.banner {
+  border:1.5px solid var(--amber); background:#fdf5e8; border-radius:4px;
+  overflow:hidden; margin:0 0 4mm; break-inside:avoid;
+}
+.banner-tag {
+  background:var(--amber); color:#fff; font-size:7.8pt; font-weight:700;
+  letter-spacing:.6px; text-transform:uppercase; padding:1.6mm 3.5mm;
+}
+.banner-body { padding:2.8mm 3.5mm; font-size:9pt; color:#6b4508; }
+.banner-body b { color:#8a5a12; }
+
+pre {
+  background:#f2f7f6; border:1px solid #dae7e4; border-left:3px solid var(--teal);
+  padding:3mm 3.5mm; border-radius:3px; font-family:"SF Mono",Menlo,Consolas,monospace;
+  font-size:7.9pt; line-height:1.45; break-inside:avoid; margin:0 0 4mm; overflow-x:auto;
+}
+ul { margin:0 0 3.5mm; padding-left:5.5mm; }
+li { margin-bottom:1.2mm; }
+.footer-note { margin-top:6mm; padding-top:3mm; border-top:1px solid var(--line); }
+</style>
+</head>
+<body>
+
+<!-- ============================ COVER ============================ -->
+<div class="cover">
+  <div class="eyebrow">S7 Delivery &middot; Build Plan</div>
+  <h1>The Standalone<br>Demo Bundle</h1>
+  <div class="rule"></div>
+  <div class="sub">One HTML file that runs the whole S7 console from a
+  <code style="background:rgba(255,255,255,.15);color:#dff3ee">file://</code> URL —
+  no server, no Python, no port, no install.</div>
+
+  <div class="cover-tiles">
+    <div class="cover-tile"><div class="n">3</div><div class="l">API calls to replace</div></div>
+    <div class="cover-tile"><div class="n">3.4 MB</div><div class="l">Avoidable if pre-rendered</div></div>
+    <div class="cover-tile"><div class="n">~180 KB</div><div class="l">Target bundle size</div></div>
+    <div class="cover-tile"><div class="n">4</div><div class="l">Phases</div></div>
+  </div>
+
+  <div class="meta">
+    <strong>Answers risk R2 — the sandbox may not serve a port</strong>
+    Plan only. Nothing in this document is built yet.<br>
+    Prepared 3 August 2026
+  </div>
+</div>
+
+<!-- ========================== 1. WHY ============================== -->
+<section class="first">
+  <h2><span class="num">1</span>Why this is worth building</h2>
+  <p class="lede">Risk R2 in the sprint plan says the locked-down sandbox may not serve a
+  port or run a local browser against one. The CLI was the stated fallback — but it loses
+  the two beats that carry the demo.</p>
+
+  <div class="callout">
+    <div class="t">The CLI cannot show the two things the client asked for</div>
+    <p>The client's brief named delivery <em>“through design”</em>, and the design step is
+    rendered diagrams. The review gate is governance, and a click reads as a decision where
+    typing <code>y</code> reads as a prompt. A standalone HTML bundle keeps both, and still
+    needs nothing installed.</p>
+  </div>
+
+  <h3>Three delivery modes, compared honestly</h3>
+  <table>
+    <thead><tr>
+      <th style="width:34%">Property</th>
+      <th class="c" style="width:22%">Server console</th>
+      <th class="c" style="width:22%">Standalone HTML</th>
+      <th class="c" style="width:22%">CLI</th>
+    </tr></thead>
+    <tbody>
+      <tr><td>Runs with no install</td><td class="c"><span class="no">No</span><br><span class="small">venv + deps</span></td><td class="c"><span class="yes">Yes</span></td><td class="c"><span class="no">No</span><br><span class="small">Python</span></td></tr>
+      <tr><td>Runs with no open port</td><td class="c"><span class="no">No</span></td><td class="c"><span class="yes">Yes</span></td><td class="c"><span class="yes">Yes</span></td></tr>
+      <tr><td>Renders DFD / ER diagrams</td><td class="c"><span class="yes">Yes</span></td><td class="c"><span class="yes">Yes</span></td><td class="c"><span class="no">No</span></td></tr>
+      <tr><td>Gate reads as governance</td><td class="c"><span class="yes">Yes</span></td><td class="c"><span class="part">Cosmetic</span></td><td class="c"><span class="no">No</span></td></tr>
+      <tr><td>Gate genuinely enforces</td><td class="c"><span class="yes">Yes</span></td><td class="c"><span class="no">No</span><br><span class="small">see §3</span></td><td class="c"><span class="yes">Yes</span></td></tr>
+      <tr><td>Emails / shares as one file</td><td class="c"><span class="no">No</span></td><td class="c"><span class="yes">Yes</span></td><td class="c"><span class="no">No</span></td></tr>
+      <tr><td>Produces a run transcript</td><td class="c"><span class="no">No</span></td><td class="c"><span class="no">No</span></td><td class="c"><span class="yes">Yes</span></td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn">
+    <div class="t">This does not replace the CLI — it sits beside it</div>
+    <p>The CLI remains the only mode that produces a paste-able transcript and the only one
+    whose output is assertable in <code>pytest</code>. The standalone bundle is the
+    <em>presentation</em> fallback; the CLI is the <em>automation</em> fallback. Sprint 1
+    still builds the CLI.</p>
+  </div>
+</section>
+
+<!-- ====================== 2. MEASUREMENTS ========================= -->
+<section>
+  <h2><span class="num">2</span>What the measurements changed</h2>
+  <p class="lede">Two numbers taken from the repo reshaped this plan. Neither was obvious
+  before measuring.</p>
+
+  <h3>Finding 1 — the coupling is tiny</h3>
+  <p><code>apps/console/static/app.js</code> is 28 KB, and its entire dependence on the
+  backend is <b class="hl">three <code>fetch</code> calls</b>: <code>GET /api/run</code>,
+  <code>POST /api/gate</code>, <code>POST /api/reset</code>. Everything else is rendering.
+  That is a clean seam, not a rewrite.</p>
+
+  <h3>Finding 2 — the diagram library is 95% of the weight</h3>
+  <div class="sizebars">
+    <div class="sb">
+      <div class="sb-top"><b>vendor/mermaid.min.js</b><span>3,400 KB</span></div>
+      <div class="sb-bar"><i style="width:100%;background:#b04a3e"></i></div>
+    </div>
+    <div class="sb">
+      <div class="sb-top"><b>app.js</b><span>28 KB</span></div>
+      <div class="sb-bar"><i style="width:0.8%;background:#2f9585"></i></div>
+    </div>
+    <div class="sb">
+      <div class="sb-top"><b>pipeline payload (JSON)</b><span>20 KB</span></div>
+      <div class="sb-bar"><i style="width:0.6%;background:#2f9585"></i></div>
+    </div>
+    <div class="sb">
+      <div class="sb-top"><b>styles.css</b><span>16 KB</span></div>
+      <div class="sb-bar"><i style="width:0.5%;background:#2f9585"></i></div>
+    </div>
+    <div class="sb">
+      <div class="sb-top"><b>index.html</b><span>4 KB</span></div>
+      <div class="sb-bar"><i style="width:0.2%;background:#2f9585"></i></div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <div class="t">The diagrams are static, so the renderer does not need to ship</div>
+    <p>Mermaid exists to turn diagram <em>source</em> into SVG at runtime. But the S7
+    diagrams never change between runs — they are fixed artifacts. Pre-rendering them to
+    inline SVG at build time removes the 3.4 MB library entirely and takes the bundle from
+    roughly <b>3.5 MB to about 180 KB</b>, a ~95% reduction.</p>
+    <p>The build step needs a browser to run mermaid once — and
+    <code>demo/render_pdf.py</code> already drives headless Chrome, so the machinery exists.</p>
+  </div>
+
+  <table>
+    <thead><tr><th style="width:46%">Bundle strategy</th><th class="c" style="width:18%">Size</th><th>Trade-off</th></tr></thead>
+    <tbody>
+      <tr><td>Inline mermaid as-is</td><td class="c">~3.5 MB</td><td>Simplest build; too heavy to email; slow first paint</td></tr>
+      <tr><td><b>Pre-render diagrams to SVG</b> <span class="pill go">Recommended</span></td><td class="c"><b>~180 KB</b></td><td>Build needs headless Chrome once; diagrams become fixed</td></tr>
+      <tr><td>Link mermaid from a CDN</td><td class="c">~150 KB</td><td><span class="no">Rejected</span> — needs network, defeats the purpose</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ======================== 3. THE GATE =========================== -->
+<section>
+  <h2><span class="num">3</span>The gate problem — decide this first</h2>
+
+  <div class="callout stop">
+    <div class="t">In a standalone file the gate cannot really enforce anything</div>
+    <p>Today the gate blocks server-side: the stories <b>do not exist in the payload</b>
+    until it is approved, which is why <code>/api/run</code> returns
+    <code>stories: []</code> and a locked reason. In a single file, all three stories must
+    ship inside the HTML — so the gate can only <em>hide</em> them. Anyone who opens
+    developer tools sees them.</p>
+  </div>
+
+  <p>This matters more than it looks. <code>CLAUDE.md</code> calls the gate
+  <em>“load-bearing, not optional”</em>, and the repo's sharpest rule is that a staged
+  artifact presented as a live one is the failure that loses the room. A cosmetic gate
+  presented as an enforcing gate is exactly that failure in a new costume.</p>
+
+  <h3>The resolution: label it, do not hide it</h3>
+  <p>The standalone build carries a persistent banner, and the gate panel states its own
+  limitation in the same way every artifact already states its provenance:</p>
+
+  <div class="banner">
+    <div class="banner-tag">Offline bundle — no server</div>
+    <div class="banner-body">Artifacts are <b>STAGED</b>. The review gate is demonstrated
+    client-side; enforcement is server-side in the real pipeline.</div>
+  </div>
+
+  <p>This costs nothing in the room — it is one sentence, and it is the same honesty the
+  demo already trades on. It converts a discoverable weakness into a stated design boundary.</p>
+
+  <div class="callout warn">
+    <div class="t">Alternative considered and rejected</div>
+    <p>The stories could be withheld from the bundle and injected only on approval via an
+    obfuscated blob. That makes the gate <em>look</em> enforcing while still being
+    client-side — strictly worse, because it is the same weakness plus an attempt to
+    conceal it. Rejected on the same grounds as any unlabelled staged artifact.</p>
+  </div>
+</section>
+
+<!-- ====================== 4. ARCHITECTURE ========================= -->
+<section>
+  <h2><span class="num">4</span>Architecture — one pipeline, two transports</h2>
+  <p class="lede">The console never learns which mode it is in. A transport object is
+  injected at load; everything above it is unchanged.</p>
+
+  <div class="arch">
+    <div class="arch-row">
+      <div class="box src"><b>s7_delivery/</b><span>pipeline.py &middot; staged.py &middot; models.py — single source of truth</span></div>
+    </div>
+    <div class="down">↓</div>
+    <div class="arch-row">
+      <div class="box"><b>to_payload()</b><span>one dict, 20 KB — the contract both transports serve</span></div>
+    </div>
+    <div class="down">↓</div>
+    <div class="split">
+      <div class="box t1"><b>HTTP transport</b><span>fetch() → FastAPI<br>server mode, gate enforced</span></div>
+      <div class="box t2"><b>Embedded transport</b><span>in-memory reducer over inlined JSON<br>offline mode, gate cosmetic</span></div>
+    </div>
+    <div class="down">↓</div>
+    <div class="arch-row">
+      <div class="box"><b>app.js — unchanged rendering</b><span>five stages, provenance badges, diagrams</span></div>
+    </div>
+  </div>
+
+  <h3>The seam, concretely</h3>
+<pre>// app.js — today, three hard-coded fetches
+fetch("/api/run")            fetch("/api/gate", …)      fetch("/api/reset", …)
+
+// after — one injected object, same three verbs
+const transport = window.S7_EMBEDDED
+  ? embeddedTransport(window.S7_EMBEDDED)   // offline bundle
+  : httpTransport();                        // served console
+
+transport.run()                transport.gate(d)          transport.reset()</pre>
+
+  <p>The embedded transport is a small reducer: it holds the approved-state payload, and
+  <code>gate()</code> returns a filtered copy with <code>stories</code> emptied and the
+  locked reason set when the decision is not <code>approved</code> — mirroring exactly what
+  <code>pipeline.build_state()</code> does server-side.</p>
+
+  <div class="callout">
+    <div class="t">Why this shape and not a second frontend</div>
+    <p>A separate offline page would drift from the served console the moment either
+    changed, and the drift would be invisible until a demo. One frontend with two transports
+    cannot drift — and a test asserts the embedded payload matches
+    <code>to_payload()</code> byte for byte.</p>
+  </div>
+</section>
+
+<!-- ========================= 5. PHASES ============================ -->
+<section>
+  <h2><span class="num">5</span>Build plan</h2>
+  <p class="lede">Four phases. Each leaves the served console working — no phase requires a
+  flag day, and the plan can be stopped after any phase with something of value.</p>
+
+  <div class="phase">
+    <div class="phase-h"><b>Phase 1 — Extract the transport seam</b><span class="est">~½ day &middot; no new files</span></div>
+    <ul>
+      <li>Move the three <code>fetch</code> calls in <code>app.js</code> behind a
+          <code>httpTransport()</code> object with <code>run / gate / reset</code>.</li>
+      <li>Route all call sites through it. No behaviour change.</li>
+      <li>Keep the existing offline error path — it is now a transport concern.</li>
+    </ul>
+    <div class="exit"><b>Exit</b>The served console behaves identically; all 60 tests still green.
+    This phase is pure refactor and is safe to land alone.</div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-h"><b>Phase 2 — Pre-render the diagrams</b><span class="est">~1 day &middot; the interesting one</span></div>
+    <ul>
+      <li>Build step loads the console in headless Chrome, waits for mermaid, and extracts
+          each rendered <code>&lt;svg&gt;</code>.</li>
+      <li>Write them to <code>s7_delivery/cache/diagrams/*.svg</code> — committed, like the
+          replay recordings, so a fresh clone needs no browser.</li>
+      <li>Served console keeps using mermaid; only the bundle uses the SVGs.</li>
+    </ul>
+    <div class="exit"><b>Exit</b>Committed SVGs render identically to the live diagrams.
+    Bundle no longer needs the 3.4 MB library.</div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-h"><b>Phase 3 — The bundler</b><span class="est">~1 day</span></div>
+    <ul>
+      <li><code>demo/build_standalone.py</code> — imports <code>s7_delivery</code>, calls
+          <code>to_payload()</code>, inlines CSS, JS, SVGs and the payload into one file.</li>
+      <li>Emits <code>dist/s7-console.html</code>. Adds the offline banner and the gate
+          labelling from §3.</li>
+      <li>Embedded transport implemented as the reducer described in §4.</li>
+    </ul>
+    <div class="exit"><b>Exit</b>Open the file from <code>file://</code> with no server
+    running: five stages render, diagrams draw, the gate toggles stories.</div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-h"><b>Phase 4 — Lock it against drift</b><span class="est">~½ day</span></div>
+    <ul>
+      <li>Test: the payload embedded in the bundle equals <code>to_payload()</code>.</li>
+      <li>Test: the embedded reducer and <code>pipeline.build_state()</code> agree on all
+          three gate decisions — <b>the assertion that stops the two modes diverging</b>.</li>
+      <li>Reuse <code>inline_images()</code> to emit the delivery pack as a standalone page
+          alongside the PDF.</li>
+    </ul>
+    <div class="exit"><b>Exit</b>Both bundles regenerate from one command and cannot silently
+    disagree with the server.</div>
+  </div>
+</section>
+
+<!-- ======================== 6. SHIPS / RISK ======================= -->
+<section>
+  <h2><span class="num">6</span>What ships, and what could go wrong</h2>
+
+  <h3>Deliverables</h3>
+  <table>
+    <thead><tr><th style="width:38%">Artifact</th><th style="width:14%">Size</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><code>dist/s7-console.html</code></td><td>~180 KB</td><td>The demo, offline, one file</td></tr>
+      <tr><td><code>dist/s7-delivery-pack.html</code></td><td>~900 KB</td><td>The pack as a page rather than a PDF</td></tr>
+      <tr><td><code>demo/build_standalone.py</code></td><td>—</td><td>Regenerates both</td></tr>
+      <tr><td><code>s7_delivery/cache/diagrams/</code></td><td>~40 KB</td><td>Committed SVGs; no browser needed to rebuild</td></tr>
+      <tr><td><code>tests/test_standalone.py</code></td><td>—</td><td>The anti-drift assertions</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Risks</h3>
+  <table>
+    <thead><tr><th style="width:6%">#</th><th style="width:28%">Risk</th><th style="width:20%">Impact</th><th>Mitigation</th></tr></thead>
+    <tbody>
+      <tr><td>S1</td><td>Gate mistaken for enforcing</td><td>The credibility failure the repo exists to avoid</td><td>Persistent banner + gate-panel label. Non-negotiable, §3</td></tr>
+      <tr><td>S2</td><td>Bundle drifts from the served console</td><td>Two demos that disagree</td><td>One frontend, two transports; equality tests in Phase 4</td></tr>
+      <tr><td>S3</td><td>Pre-rendered SVGs go stale</td><td>Diagrams show old design</td><td>Committed like replay recordings; regenerated by the same build</td></tr>
+      <tr><td>S4</td><td><code>file://</code> blocks something at demo time</td><td>Bundle will not open</td><td>No <code>fetch</code>, no modules, no workers — inline everything. Test from <code>file://</code>, not a local server</td></tr>
+      <tr><td>S5</td><td>Scope creep into a second product</td><td>Sprint 1 slips</td><td>Phases 1–2 are useful alone; stop after any phase</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn">
+    <div class="t">Where this sits against the sprint plan</div>
+    <p>This is <b>not</b> in Sprints 0–5. It is a mitigation for R2 that becomes worth
+    building only if the platform team confirms the sandbox cannot serve a port. Phase 1 is
+    a safe refactor worth doing regardless; Phases 2–4 should wait for that answer.
+    <b>Ask the platform team before starting Phase 2.</b></p>
+  </div>
+
+  <h3>Open decisions</h3>
+  <ul>
+    <li><b>Does the sandbox permit a local port at all?</b> — the whole trigger. Unanswered.</li>
+    <li><b>Does the bundle ship the gate at all,</b> or open post-approval with stories already
+        visible? A labelled cosmetic gate is more faithful to the flow; no gate is more honest
+        still. Recommend the labelled gate.</li>
+    <li><b>One bundle or two</b> — console and pack separately, or a single navigable document.
+        Recommend separate; they have different audiences.</li>
+  </ul>
+
+  <div class="footer-note small">
+    Plan only — nothing here is implemented. Sizes are measured from the current repo;
+    the ~180 KB target is an estimate from those measurements, not a built artifact.
+    MapleSure Insurance is a fictional demonstration insurer.
+  </div>
+</section>
+
+</body>
+</html>

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>S7 Delivery Control Centre — MapleSure</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true">MS</span>
+    <div>
+      <div class="brand-kicker">MapleSure Insurance · S7 Control Centre</div>
+      <h1>S7 Delivery Control Centre</h1>
+    </div>
+  </div>
+  <div class="top-controls">
+    <span class="pill safe" title="No IDE, terminal, prompts, credentials or raw logs are exposed on this surface">Customer-safe view</span>
+    <span class="pill" id="modePill">mode: —</span>
+    <span class="pill" id="runPill">run: —</span>
+    <label class="role-select">Acting as
+      <select id="roleSelect"></select>
+    </label>
+    <button id="refreshBtn" class="ghost" title="Re-fetch run state">Refresh</button>
+    <button id="resetBtn" class="ghost danger-ghost" title="Restore the seeded demo state">Reset demo</button>
+  </div>
+</header>
+
+<nav class="stepper" id="stepper" aria-label="Delivery stages">
+  <!-- populated by app.js -->
+</nav>
+
+<div class="layout">
+  <nav class="sidenav" id="sidenav" aria-label="Sections">
+    <!-- populated by app.js -->
+  </nav>
+
+  <main id="main">
+    <section class="empty">
+      <h2>Loading run state…</h2>
+      <p>The Control Centre renders entirely from <code>GET /api/runs/&lt;id&gt;</code>.</p>
+    </section>
+  </main>
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<footer class="foot">
+  MapleSure Insurance is a fictional insurer. All data on this surface is
+  demonstration data. Artifacts are labelled with their provenance —
+  <span class="prov prov-simulated">SIMULATED</span> evidence is produced by the
+  deterministic demo engine, never presented as live output.
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MapleSure S7 Delivery Console</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">MapleSure Insurance</p>
+        <h1>S7 Delivery Console</h1>
+      </div>
+      <div class="header-status" id="connection-status" role="status" aria-live="polite">
+        Loading pipeline state
+      </div>
+    </header>
+
+    <nav class="stage-rail" aria-label="Delivery stages">
+      <button type="button" data-stage-target="stage-overview">
+        <span class="stage-number">⌂</span>
+        <span>GATES</span>
+      </button>
+      <button type="button" data-stage-target="stage-epic">
+        <span class="stage-number">1</span>
+        <span>EPIC</span>
+      </button>
+      <button type="button" data-stage-target="stage-assess">
+        <span class="stage-number">2</span>
+        <span>ASSESS</span>
+      </button>
+      <button type="button" data-stage-target="stage-design">
+        <span class="stage-number">3</span>
+        <span>DESIGN</span>
+      </button>
+      <button type="button" data-stage-target="stage-gate">
+        <span class="stage-number">4</span>
+        <span>GATE</span>
+      </button>
+      <button type="button" data-stage-target="stage-stories">
+        <span class="stage-number">5</span>
+        <span>STORIES</span>
+      </button>
+      <button type="button" data-stage-target="stage-downstream">
+        <span class="stage-number">6</span>
+        <span>BUILD &amp; RELEASE</span>
+      </button>
+    </nav>
+
+    <main id="app" class="console-shell" aria-live="polite">
+      <section class="empty-state">
+        <h2>Loading the delivery run</h2>
+        <p>The console will render from the pipeline state returned by <code>GET /api/run</code>.</p>
+      </section>
+    </main>
+
+    <script src="/app.js" defer></script>
+  </body>
+</html>

@@ -1,0 +1,66 @@
+# secrets
+.env
+
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.ruff_cache/
+.pytest_cache/
+*.egg-info/
+
+# LLM/embedding response cache — regenerated, never hand-edited.
+# NOTE: s7_delivery/cache/ (the committed replay recordings) is deliberately
+# NOT ignored — those are a deliverable, committed for demo reliability.
+.cache/
+
+# per-run staging/diff artifacts — regenerated every run
+s7_delivery/out/
+
+# Control Centre run state — recreated from seed on demand; a presenter's
+# local runs are not demo material to commit
+artifacts/runs/
+
+# generated data — keep the directory, not its contents
+data/*
+!data/.gitkeep
+
+# frontend build output/deps, if a web console lands here.
+# Portability rule 4: dist/ must be built or vendored ahead of time for the
+# locked-down environment, where npm may not be available.
+node_modules/
+dist/
+.vite/
+
+# OS / editor noise
+.DS_Store
+*.swp
+.vscode/
+
+# local scratch — never demo material
+tmp/
+output/
+logs/
+
+# reference material carrying the real client name — never commit (hard rule 2)
+client-inputs-raw/
+
+# raw call recordings, transcripts and photos. These name the real client and
+# the supplier verbatim — hard rules 1 and 2 both apply. Anything needed from
+# here gets rewritten to the MapleSure fiction before it lands in the repo.
+callDetails/
+
+# another team's internal material, held locally for reference only — never
+# commit. Ideas may be borrowed; their documents, wording, figures and measured
+# numbers do not ship here. Keep all such material under this one neutral path:
+# a folder named after the team would leak the team name into this file.
+reference-internal/
+
+# console screenshots, and the one PDF that embeds them. Deliberately not
+# published: this repo is public, and screenshots of the running demo are not
+# something to hand out. `docs/delivery-pack.html` is committed, so the pack
+# regenerates locally once the screenshots are re-captured:
+#     demo/run_console.sh   then   demo/render_pdf.py
+docs/assets/
+docs/S7-Delivery-Pack.pdf

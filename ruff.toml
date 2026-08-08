@@ -1,0 +1,12 @@
+target-version = "py312"
+line-length = 100
+
+# Generated artifacts, excluded from lint:
+# - s7_delivery/out: per-run staged files + diffs, one directory per run.
+extend-exclude = ["s7_delivery/out", "tmp"]
+
+[lint]
+select = ["E", "F", "I", "UP"]
+
+[format]
+quote-style = "double"

@@ -1,0 +1,33 @@
+# Pinned deliberately — hard rule 4 (must survive a port to a locked-down
+# environment). Add a pin, not a range, and say why if the version matters.
+#
+# Versions match ../ams-s3-demo where the two overlap, so a sandbox that has
+# already resolved wheels for S3 does not re-resolve for S7.
+
+# --- LLM providers. All calls go through common/llm.py; see AGENTS.md. ---
+# 0.91.0 is the first release exposing AnthropicBedrockMantle (the Messages-API
+# Bedrock client the "bedrock" provider needs); 0.90.0 does not have it.
+anthropic==0.91.0
+openai==1.109.1
+boto3==1.40.76
+
+# --- core ---
+python-dotenv==1.1.1
+pydantic==2.12.3
+httpx==0.28.1
+
+# --- API layer ---
+fastapi==0.139.2
+uvicorn==0.51.0
+
+# --- tooling ---
+ruff==0.14.4
+pytest==8.4.2
+
+# Deliberately NOT pinned yet — add only when a beat actually needs one:
+#   pandas / altair      ticket + metrics analysis
+#   scikit-learn         clustering, if the assessment step needs it
+#   chromadb             semantic retrieval over the epic/story corpus
+#   playwright           PDF export or before/after screenshots
+#   streamlit            only if a target app needs a quick UI
+# Every one of these costs sandbox install time. Justify before adding.

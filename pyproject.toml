@@ -1,0 +1,5 @@
+[tool.pytest.ini_options]
+# Only the real suite. Without this, a bare `pytest` from the repo root sweeps
+# up generated artifacts (s7_delivery/out/ staged copies) and dies with
+# collection errors before running a single real test.
+testpaths = ["tests"]

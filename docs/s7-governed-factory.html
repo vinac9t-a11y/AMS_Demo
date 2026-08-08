@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MapleSure S7 — The Governed Factory (Design)</title>
+<style>
+  :root {
+    --bg: #0e1116; --card: #171c24; --card-2: #1d232e;
+    --ink: #eef2f7; --soft: #9aa7b8; --line: #2a3341; --line-2: #3a4556;
+    --accent: #e04f4f; --accent-soft: #ff8e6e;
+    --ok: #4fae7c; --warn: #d9a13c; --blue: #5b9dd9;
+    --ok-bg: rgba(79,174,124,.10); --warn-bg: rgba(217,161,60,.10);
+    --red-bg: rgba(224,79,79,.10); --blue-bg: rgba(91,157,217,.10);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { background: var(--bg); color: var(--ink);
+         font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif; line-height: 1.5; }
+  .page { max-width: 1180px; margin: 0 auto; padding: 48px clamp(18px, 4vw, 48px) 80px; }
+
+  .kicker { font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--accent-soft); font-weight: 700; }
+  h1 { font-size: clamp(28px, 4.5vw, 44px); line-height: 1.12; margin: 8px 0 10px; }
+  h2 { font-size: clamp(20px, 3vw, 28px); margin: 0 0 6px; }
+  h3 { font-size: 15px; }
+  .lede { color: var(--soft); max-width: 78ch; font-size: 15.5px; }
+
+  section { margin-top: 64px; break-inside: avoid; }
+  .sec-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 6px; }
+  .sec-num { font-family: ui-monospace, Menlo, monospace; color: var(--accent-soft); font-size: 14px; font-weight: 700; }
+  .sec-sub { color: var(--soft); font-size: 14.5px; max-width: 84ch; margin-bottom: 20px; }
+
+  .b { display: inline-block; font-size: 10px; font-weight: 800; letter-spacing: .07em;
+       padding: 2px 9px; border-radius: 999px; vertical-align: 2px; white-space: nowrap; }
+  .b.live { background: var(--ok-bg); color: var(--ok); border: 1px solid var(--ok); }
+  .b.plan { background: var(--warn-bg); color: var(--warn); border: 1px dashed var(--warn); }
+  .b.gate { background: var(--red-bg); color: var(--accent-soft); border: 1px solid var(--accent); }
+  .b.spec { background: var(--blue-bg); color: var(--blue); border: 1px solid var(--blue); }
+
+  .banner { margin-top: 22px; border: 1.5px dashed var(--warn); background: var(--warn-bg);
+            border-radius: 14px; padding: 16px 20px; display: flex; gap: 14px; align-items: flex-start; }
+  .banner .i { font-size: 20px; line-height: 1.2; }
+  .banner .t { font-weight: 700; font-size: 14px; }
+  .banner .d { color: var(--soft); font-size: 13px; margin-top: 2px; max-width: 90ch; }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+  .cardx { border-radius: 12px; padding: 15px 17px; border: 1.5px solid var(--line); background: var(--card); break-inside: avoid; }
+  .cardx .t { font-weight: 700; font-size: 13.5px; }
+  .cardx .d { color: var(--soft); font-size: 12.5px; margin-top: 5px; line-height: 1.55; }
+  .cardx.ok { border-top: 3px solid var(--ok); }
+  .cardx.blue { border-top: 3px solid var(--blue); }
+  .cardx.warn { border-top: 3px solid var(--warn); }
+  .cardx.red { border-top: 3px solid var(--accent); }
+
+  .flow-wrap { overflow-x: auto; padding-bottom: 6px; }
+  .flow { display: flex; align-items: stretch; min-width: 980px; }
+  .node { flex: 1; min-width: 104px; background: var(--card); border: 1.5px solid var(--line);
+          border-radius: 12px; padding: 12px 12px 10px; display: flex; flex-direction: column; gap: 5px; }
+  .node.gatebox { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(224,79,79,.15); }
+  .node.autogate { border-color: var(--warn); box-shadow: 0 0 0 3px rgba(217,161,60,.13); }
+  .node.okbox { border-color: var(--ok); }
+  .node .t { font-weight: 700; font-size: 13px; }
+  .node .d { color: var(--soft); font-size: 11px; line-height: 1.4; }
+  .arr { flex: 0 0 28px; display: flex; align-items: center; justify-content: center;
+         color: var(--line-2); font-size: 20px; font-weight: 700; }
+  .legend { display: flex; gap: 8px 18px; flex-wrap: wrap; margin: 14px 0 0; align-items: center; }
+  .legend span.t { color: var(--soft); font-size: 12.5px; margin-right: 6px; }
+
+  .tree { background: #0a0d11; color: #e8eef5; border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px;
+          font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; line-height: 1.85;
+          overflow-x: auto; white-space: pre; }
+  .tree .dim { color: #6e7f94; } .tree .hl { color: #ffb38a; } .tree .grn { color: #7fd0a7; }
+  .split { display: grid; grid-template-columns: minmax(300px, 460px) 1fr; gap: 18px; align-items: start; }
+  @media (max-width: 900px) { .split { grid-template-columns: 1fr; } }
+  .fnotes { display: flex; flex-direction: column; gap: 10px; }
+  .fnote { border-left: 3px solid var(--line-2); padding: 6px 14px; break-inside: avoid; }
+  .fnote.hot { border-left-color: var(--accent); }
+  .fnote.ok { border-left-color: var(--ok); }
+  .fnote.warn2 { border-left-color: var(--warn); }
+  .fnote .t { font-weight: 700; font-size: 13.5px; font-family: ui-monospace, Menlo, monospace; }
+  .fnote .d { color: var(--soft); font-size: 12.5px; }
+
+  table.plain { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  table.plain th, table.plain td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.plain th { color: var(--soft); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
+  table.plain td .m { font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; color: var(--blue); }
+  table.plain td.soft { color: var(--soft); }
+
+  .bars { display: flex; flex-direction: column; gap: 10px; max-width: 640px; }
+  .barrow { display: grid; grid-template-columns: 150px 1fr 70px; gap: 12px; align-items: center; }
+  .barrow .lbl { font-size: 13px; font-weight: 700; }
+  .barrow .track { background: var(--card-2); border-radius: 999px; height: 14px; overflow: hidden; border: 1px solid var(--line); }
+  .barrow .fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent), var(--warn)); }
+  .barrow.good .fill { background: linear-gradient(90deg, var(--warn), var(--ok)); }
+  .barrow .val { font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; color: var(--soft); text-align: right; }
+
+  .chain { display: flex; align-items: center; gap: 0; overflow-x: auto; padding: 6px 0; }
+  .chain .lk { flex: 0 0 auto; background: var(--card-2); border: 1px solid var(--blue); border-radius: 10px;
+               padding: 10px 16px; min-width: 130px; text-align: center; }
+  .chain .lk .t { font-weight: 700; font-size: 12.5px; color: var(--blue); }
+  .chain .lk .d { color: var(--soft); font-size: 10.5px; margin-top: 3px; }
+  .chain .lk.hot { border-color: var(--accent); } .chain .lk.hot .t { color: var(--accent-soft); }
+  .chain .lk.good { border-color: var(--ok); } .chain .lk.good .t { color: var(--ok); }
+  .chain .sl { flex: 0 0 auto; color: var(--line-2); padding: 0 10px; font-size: 16px; }
+
+  ol.build { counter-reset: step; list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px; }
+  ol.build li { counter-increment: step; background: var(--card); border: 1.5px solid var(--line); border-radius: 12px;
+                padding: 13px 15px 12px 48px; position: relative; font-size: 13px; color: var(--soft); break-inside: avoid; }
+  ol.build li b { color: var(--ink); display: block; font-size: 13.5px; margin-bottom: 2px; }
+  ol.build li::before { content: counter(step); position: absolute; left: 14px; top: 13px; width: 24px; height: 24px;
+                        border-radius: 50%; background: var(--accent); color: #fff; font-weight: 700; font-size: 12px;
+                        display: flex; align-items: center; justify-content: center; }
+
+  ul.checks { list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 8px 22px; }
+  ul.checks li { color: var(--soft); font-size: 13px; padding-left: 24px; position: relative; }
+  ul.checks li::before { content: "✓"; position: absolute; left: 0; color: var(--ok); font-weight: 700; }
+
+  footer { margin-top: 80px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--soft); font-size: 12px; }
+  @media print {
+    body { background: var(--bg); }
+    section { margin-top: 40px; }
+    .flow-wrap, .chain, .tree { overflow-x: visible; }
+    .flow-wrap { zoom: 0.58; }
+    .chain { zoom: 0.72; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="kicker">MapleSure Insurance · S7 Full-Scale Delivery</div>
+  <h1>The Governed Factory</h1>
+  <p class="lede">One artifact plane, five gates, and two loops that learn — the design that implements
+  all ten S7 feature priorities as genuinely running, deterministic mechanisms. No black box:
+  every artifact is hashed, chained, traceable, and gated before it moves.</p>
+
+  <div class="banner">
+    <div class="i">⚠️</div>
+    <div>
+      <div class="t">DESIGN — approved 2026-08-06 · not yet built <span class="b plan">PLANNED</span></div>
+      <div class="d">This page describes the approved design, not a running system. Anything shown here
+      ships only when its build step lands; the sibling architecture pages describe what runs today.
+      Full spec: <code>docs/superpowers/specs/2026-08-06-governed-factory-design.md</code>.</div>
+    </div>
+  </div>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">00</span><h2>Four decisions that shape everything</h2></div>
+    <div class="cards">
+      <div class="cardx ok">
+        <div class="t">Real, deterministic — not staged</div>
+        <div class="d">The self-healing loop and the accuracy loop run for real on real run data.
+        No LLM required; nothing in them is badged STAGED.</div>
+      </div>
+      <div class="cardx blue">
+        <div class="t">Three epics show the trend</div>
+        <div class="d">EPIC-S7-001 plus two new synthetic epics (sponsor billing statements,
+        member document e-consent), each with committed “actuals”. Error narrows epic over epic.</div>
+      </div>
+      <div class="cardx warn">
+        <div class="t">Minimal real downstream lane</div>
+        <div class="d">A small synthetic target app in the repo. Patches apply for real, pytest runs
+        red→green for real, release is a gated ledger event. Patch content pre-authored and labelled.</div>
+      </div>
+      <div class="cardx red">
+        <div class="t">Artifact plane is the spine</div>
+        <div class="d">All ten features are views or checks over one shared file plane —
+        not ten separate subsystems.</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">01</span><h2>The artifact plane</h2></div>
+    <p class="sec-sub">Every stage writes a JSON envelope to a deterministic path. The header carries a SHA-256
+    content hash and <code>derived_from</code> pointers at the upstream artifacts it was built from — which turns
+    the plane into a provenance chain, makes staleness a hash comparison, and makes interrupted runs resumable.</p>
+    <div class="split">
+      <div class="tree"><span class="dim">artifacts/</span>                       <span class="dim">← gitignored, regenerated by running</span>
+  EPIC-S7-002/
+    assess/<span class="grn">assessment.json</span>
+    design/<span class="grn">dfd.json</span>  <span class="grn">er.json</span>
+    stories/<span class="grn">US-021.json</span> …
+    verify/<span class="hl">verdict.json</span>       <span class="dim">← Gate 3 output</span>
+    build/ test/ docs/ release/
+    calibration/<span class="grn">record.json</span>
+  <span class="hl">ledger.jsonl</span>                 <span class="dim">← append-only, hash-chained</span>
+
+<span class="dim">committed:</span> crs/ <span class="dim">(epics + actuals)</span>,
+rules/, skills/, target_app/, patches/</div>
+      <div class="fnotes">
+        <div class="fnote hot">
+          <div class="t">ledger.jsonl — the provenance ledger</div>
+          <div class="d">One line per artifact event; each line carries the SHA-256 of the previous line.
+          Editing history breaks the chain visibly — tamper-evident with zero infrastructure.
+          A broken chain raises at load, naming the offending line.</div>
+        </div>
+        <div class="fnote ok">
+          <div class="t">meta.derived_from — the traceability matrix</div>
+          <div class="d">Walk the pointers epic → design → story → task → test → release, in either direction.
+          A defect traces backward in one lookup.</div>
+        </div>
+        <div class="fnote warn2">
+          <div class="t">Staleness detection</div>
+          <div class="d">Upstream hash no longer matches what downstream recorded? Downstream is stale, flagged
+          in ledger and UI — and Gate 4 refuses release until it is regenerated. Regeneration is explicit
+          (<code>--refresh</code>); it marks things stale rather than deleting them.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">02</span><h2>The four layers, as directories</h2></div>
+    <table class="plain">
+      <tr><th>Layer</th><th>Where</th><th>What</th></tr>
+      <tr><td><b>Rules</b></td><td><span class="m">s7_delivery/rules/delivery-rules.md</span></td>
+          <td class="soft">Loaded identically into every stage's prompt prefix — the existing
+          <span class="m">common/prompt.py</span> ordering.</td></tr>
+      <tr><td><b>Skills</b></td><td><span class="m">s7_delivery/skills/&lt;stage&gt;.md</span> + <span class="m">.history.jsonl</span></td>
+          <td class="soft">Per-stage instruction files, versioned. The thing self-healing amends.</td></tr>
+      <tr><td><b>Workflows</b></td><td><span class="m">s7_delivery/pipeline.py</span></td>
+          <td class="soft">Stage orchestration and gate enforcement — gates live here so no surface can route around them.</td></tr>
+      <tr><td><b>Orchestrator</b></td><td>CLI runner · console</td>
+          <td class="soft">Thin views over the same orchestration. Neither holds logic.</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">03</span><h2>Five gates, one pipeline</h2></div>
+    <p class="sec-sub">Nothing advances without passing a gate, and no phase approves its own work.
+    Gates fail loudly with named reasons — and those reasons are what the healing loop consumes.</p>
+    <div class="flow-wrap"><div class="flow">
+      <div class="node"><div class="t">Epic</div><div class="d">business requirement in</div></div>
+      <div class="arr">→</div>
+      <div class="node autogate"><div class="t">G0 · intake</div><div class="d">parses; sections present; open questions extracted</div></div>
+      <div class="arr">→</div>
+      <div class="node"><div class="t">Assess + Design</div><div class="d">streams, estimates, DFD/ER</div></div>
+      <div class="arr">→</div>
+      <div class="node gatebox"><div class="t">G1 · HUMAN review</div><div class="d">the existing gate — still blocks for real</div></div>
+      <div class="arr">→</div>
+      <div class="node"><div class="t">Stories</div><div class="d">breakdown into stories + tasks</div></div>
+      <div class="arr">→</div>
+      <div class="node autogate"><div class="t">G2 · story quality</div><div class="d">purpose, testable ACs, impacts, flag, rollback; every AC claimed</div></div>
+      <div class="arr">→</div>
+      <div class="node autogate"><div class="t">G3 · independent verify</div><div class="d">separate verifier; verdict artifact; downstream refuses unverified input</div></div>
+      <div class="arr">→</div>
+      <div class="node"><div class="t">Build · Test · Docs</div><div class="d">the minimal real lane</div></div>
+      <div class="arr">→</div>
+      <div class="node gatebox"><div class="t">G4 · HUMAN approval</div><div class="d">refuses stale or unverified chains</div></div>
+      <div class="arr">→</div>
+      <div class="node okbox"><div class="t">Release</div><div class="d">gated ledger event</div></div>
+    </div></div>
+    <div class="legend"><span class="t">Legend</span>
+      <span class="b gate">HUMAN GATE</span> <span class="b plan">AUTOMATED GATE</span> <span class="b live">EXECUTES</span></div>
+    <div class="banner" style="margin-top:18px">
+      <div class="i">🧭</div>
+      <div>
+        <div class="t">Honesty rule on G3</div>
+        <div class="d">No LLM access yet, so Gate 3 is a <b>rule-based verifier and is labelled exactly that</b>
+        in every surface — “rule-based checks today; second-model review when LLM access lands.” It is never
+        presented as AI. The module boundary is where a second model drops in later, and only that module changes.</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">04</span><h2>The accuracy loop — each epic makes the next one better</h2></div>
+    <p class="sec-sub">On epic completion, a calibration artifact records predicted vs. actual per stream and the
+    run's error. Per-stream correction factors update (exponentially weighted), and the next epic's assessment
+    applies them — recording <b>both raw and corrected estimates</b>, so the adjustment is visible, never hidden.</p>
+    <div class="bars">
+      <div class="barrow"><div class="lbl">EPIC-S7-001</div><div class="track"><div class="fill" style="width:88%"></div></div><div class="val">±40% err</div></div>
+      <div class="barrow"><div class="lbl">EPIC-S7-002</div><div class="track"><div class="fill" style="width:55%"></div></div><div class="val">±25% err</div></div>
+      <div class="barrow good"><div class="lbl">EPIC-S7-003</div><div class="track"><div class="fill" style="width:26%"></div></div><div class="val">±12% err</div></div>
+    </div>
+    <p class="sec-sub" style="margin-top:14px">Illustrative targets — the demo shows whatever the real computation
+    produces over the committed actuals. This is the concrete form of the agreed answer on estimates
+    (“grounded in historical delivery data”) and feeds the estimation-accuracy KPI directly.</p>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">05</span><h2>The self-healing loop — the factory fixes its own skills</h2></div>
+    <p class="sec-sub">The activity log records every stage outcome, including gate failures with their reasons.
+    After each run, healing scans for recurring failure patterns and appends a versioned amendment to the
+    responsible skill file — recorded in the ledger with the triggering log entries as <code>derived_from</code>.</p>
+    <div class="chain">
+      <div class="lk hot"><div class="t">G2 fails</div><div class="d">epic 1 stories: no rollback plan</div></div>
+      <div class="sl">›</div>
+      <div class="lk"><div class="t">Log records reason</div><div class="d">named gate failure, in the plane</div></div>
+      <div class="sl">›</div>
+      <div class="lk"><div class="t">Healing detects pattern</div><div class="d">rule-based, labelled as such</div></div>
+      <div class="sl">›</div>
+      <div class="lk"><div class="t">Skill amended → v2</div><div class="d">skills/stories.md, versioned, ledgered</div></div>
+      <div class="sl">›</div>
+      <div class="lk good"><div class="t">Epic 2 passes first try</div><div class="d">first-time-right rate improves, attributably</div></div>
+    </div>
+    <p class="sec-sub" style="margin-top:14px">The chain <i>log entry → amendment → improved outcome</i> is walkable
+    in the ledger. This is change management running for real: impact recorded, amendment versioned, stability
+    verified by the next run.</p>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">06</span><h2>Contract, surfaces, tests</h2></div>
+    <div class="cards">
+      <div class="cardx blue">
+        <div class="t">Contract — all additive</div>
+        <div class="d"><span style="font-family:ui-monospace,Menlo,monospace">UserStory</span> += purpose, impacts,
+        feature_flag, rollback_plan · <span style="font-family:ui-monospace,Menlo,monospace">Task</span> += task_type,
+        patch_path · new: ArtifactMeta, Verdict, CalibrationRecord, SkillAmendment, DownstreamResult.
+        Existing 60 tests stay green.</div>
+      </div>
+      <div class="cardx ok">
+        <div class="t">Surfaces</div>
+        <div class="d">CLI: <span style="font-family:ui-monospace,Menlo,monospace">python -m s7_delivery.run &lt;EPIC-ID&gt;</span>
+        — full run, printed transcript, pytest-assertable. Console: three new panels — Ledger/Traceability,
+        KPIs (accuracy + first-time-right), Factory (skills + amendment history). Both human gates stay.</div>
+      </div>
+      <div class="cardx warn">
+        <div class="t">Tests — one file per mechanism</div>
+        <div class="d">Five gates block/unblock · envelope hashing · ledger tamper detection · staleness
+        propagation · calibration narrows (asserted) · healing amendment lands and next run passes ·
+        downstream red→green. All offline, no API key.</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">07</span><h2>Build order</h2></div>
+    <p class="sec-sub">Respecting the repo's hard sequencing rules: contract before downstream;
+    anything the lane carries lands in the contract first.</p>
+    <ol class="build">
+      <li><b>Artifact plane + ledger</b>envelopes, hashing, chain, staleness</li>
+      <li><b>Contract + G0/G2</b>story-quality fields and completeness checks</li>
+      <li><b>G3 verifier</b>verdict artifacts; downstream refuses unverified</li>
+      <li><b>Target app + lane + G4</b>build → test → docs → gated release</li>
+      <li><b>Calibration + two epics</b>EPIC-S7-002 / 003 with actuals</li>
+      <li><b>Healing</b>log patterns → versioned skill amendments</li>
+      <li><b>Console panels</b>ledger, KPIs, factory</li>
+      <li><b>Deliverables v2</b>deck, teleprompt, HTML pages — describing what then runs</li>
+    </ol>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">08</span><h2>What this delivers, feature by feature</h2></div>
+    <ul class="checks">
+      <li>Gated pipeline (5 gates) — G0–G4, enforced in the workflow layer</li>
+      <li>Four-layer architecture — rules / skills / workflows / orchestrator as directories</li>
+      <li>Story quality standards — contract fields enforced by G2</li>
+      <li>Provenance ledger — append-only, SHA-256 hash-chained</li>
+      <li>Factory activity log — session records in the plane, with durations</li>
+      <li>Independent review (G3) — verdict artifacts; labelled rule-based until LLM lands</li>
+      <li>Traceability matrix — derived_from pointers, walkable both ways</li>
+      <li>Change management — versioned, ledgered skill amendments</li>
+      <li>Completeness checks (G0–G2) — requirement→story mapping, AC coverage</li>
+      <li>Staleness detection — hash mismatch flags downstream; G4 refuses</li>
+      <li>+ Accuracy loop — calibration narrows error each epic</li>
+      <li>+ Self-healing loop — logs trigger skill amendments, next run proves them</li>
+    </ul>
+  </section>
+
+  <footer>
+    MapleSure Insurance is a fictional demo insurer. All data synthetic. Design approved 2026-08-06 —
+    implementation pending; nothing on this page is a claim that the system runs today.
+  </footer>
+
+</div>
+</body>
+</html>

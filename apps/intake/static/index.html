@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>S7 Epic Intake — MapleSure</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="top">
+  <div>
+    <div class="kicker">MapleSure · AI-assisted delivery · S7</div>
+    <h1>Epic intake — clarify, then plan</h1>
+  </div>
+  <div class="top-right">
+    <span id="roundsBadge" class="rounds" hidden></span>
+    <button id="resetBtn" class="ghost" title="Drop the session and start over">Reset</button>
+  </div>
+</header>
+
+<nav class="stepper">
+  <div class="step" id="step1"><span class="dot">1</span> Epic</div>
+  <div class="step" id="step2"><span class="dot">2</span> Clarify</div>
+  <div class="step" id="step3"><span class="dot">3</span> Plan</div>
+</nav>
+
+<main>
+  <!-- Stage 1: epic in -->
+  <section id="epicPane" class="pane">
+    <p class="lede">Paste an epic, upload or drag a <code>.md</code> onto the text box, or load
+    the seeded one. The assistant reads it the way a scrum master would — and asks before it assumes.</p>
+    <div class="epic-actions">
+      <button id="sampleBtn">Load seeded epic (EPIC-S7-001)</button>
+      <label class="file-label">Upload .md / .txt
+        <input type="file" id="fileInput" accept=".md,.txt,text/plain,text/markdown">
+      </label>
+    </div>
+    <textarea id="epicText" rows="14"
+      placeholder="# EPIC-XXX — title&#10;&#10;Business context, current state, scope, acceptance…"></textarea>
+    <div class="epic-actions">
+      <button id="startBtn" class="primary" title="Shortcut: Ctrl/Cmd + Enter">Run intake</button>
+      <span id="epicStatus" class="status"></span>
+    </div>
+  </section>
+
+  <!-- Stage 2: clarification chat -->
+  <section id="clarifyPane" class="pane" hidden>
+    <h2 id="epicTitle"></h2>
+    <div id="chat"></div>
+    <form id="answerForm" hidden>
+      <div id="answerFields"></div>
+      <div class="epic-actions">
+        <button type="submit" class="primary">Send answers</button>
+        <button type="button" id="skipBtn" class="ghost"
+          title="Stop the questions — plan now, assumptions stated">Skip to plan</button>
+        <span id="answerHint" class="status" aria-live="polite"></span>
+        <span id="clarifyStatus" class="status" role="status" aria-live="polite"></span>
+      </div>
+    </form>
+  </section>
+
+  <!-- Stage 3: the plan — a draft until a named human approves it -->
+  <section id="planPane" class="pane" hidden>
+    <div class="plan-head">
+      <h2 id="planTitle"></h2>
+      <span id="planBadge" class="badge"></span>
+      <span id="planState" class="badge state"></span>
+    </div>
+    <div id="coverage"></div>
+    <div id="assumptions"></div>
+    <div id="sprints"></div>
+    <div id="review"></div>
+    <h3>Team load</h3>
+    <div id="teamLoad" class="team-load"></div>
+  </section>
+</main>
+
+<!-- Activity log: measured, not narrated -->
+<aside id="activity" class="activity">
+  <h3>Activity log</h3>
+  <div id="activityList"></div>
+  <div id="reviewLogWrap" hidden>
+    <h3>Review log — human decisions</h3>
+    <div id="reviewLog"></div>
+  </div>
+</aside>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

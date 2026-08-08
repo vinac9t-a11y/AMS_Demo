@@ -1,0 +1,597 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>S7 Delivery Pack</title>
+<style>
+/* ------------------------------------------------------------------ *
+ * S7 Delivery Pack — print stylesheet.
+ * Rendered by demo/render_pdf.py via headless Chrome. Screen units are
+ * mm because every dimension here exists to survive pagination.
+ * ------------------------------------------------------------------ */
+@page { size: A4; margin: 14mm 13mm 15mm; }
+@page :first { margin: 0; }
+
+:root {
+  --ink:#0f2136; --ink-2:#2c4a68; --muted:#5a6b7d; --line:#dde3ea;
+  --navy:#12283f; --blue:#2f6fb0; --teal:#2b7a6f; --amber:#b8791f;
+  --slate:#5b6b7f; --wash:#f6f9fb; --wash-2:#eef4fa;
+}
+* { box-sizing:border-box; }
+body {
+  font-family:-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;
+  font-size:9.9pt; line-height:1.5; color:var(--ink); margin:0;
+  -webkit-print-color-adjust:exact; print-color-adjust:exact;
+}
+h1,h2,h3,h4 { margin:0; }
+p { margin:0 0 3mm; }
+code {
+  font-family:"SF Mono",Menlo,Consolas,monospace; font-size:8.4pt;
+  background:#eef2f6; padding:.4mm 1.1mm; border-radius:2px; color:#1b3a5c;
+}
+.small { font-size:8.6pt; color:var(--muted); }
+
+/* --- cover --------------------------------------------------------- */
+.cover {
+  height:297mm; background:linear-gradient(150deg,#12283f 0%,#1d4160 55%,#2b6a86 100%);
+  color:#fff; padding:26mm 20mm; display:flex; flex-direction:column;
+  break-after:page; position:relative;
+}
+.cover .eyebrow { letter-spacing:3px; font-size:8.6pt; text-transform:uppercase; opacity:.72; }
+.cover h1 { font-size:34pt; line-height:1.1; margin:5mm 0 3mm; letter-spacing:-.6px; }
+.cover .sub { font-size:13pt; opacity:.9; font-weight:300; max-width:135mm; }
+.cover .rule { width:26mm; height:2.5px; background:#7fc4d8; margin:8mm 0; }
+.cover .meta { margin-top:auto; font-size:9pt; opacity:.85; }
+.cover .meta strong { display:block; font-size:10.5pt; opacity:1; margin-bottom:1mm; }
+.cover-tiles { display:flex; gap:4mm; margin-top:10mm; }
+.cover-tile {
+  flex:1; background:rgba(255,255,255,.11); border:1px solid rgba(255,255,255,.2);
+  border-radius:3px; padding:4mm;
+}
+.cover-tile .n { font-size:19pt; font-weight:600; line-height:1; }
+.cover-tile .l { font-size:7.6pt; text-transform:uppercase; letter-spacing:.7px; opacity:.8; margin-top:2mm; }
+
+/* --- structure ------------------------------------------------------ */
+section { break-before:page; }
+section.flow { break-before:auto; }
+h2 {
+  font-size:15pt; color:var(--navy); letter-spacing:-.2px;
+  padding-bottom:2mm; border-bottom:2.5px solid var(--navy); margin-bottom:4mm;
+}
+h2 .num {
+  display:inline-block; background:var(--navy); color:#fff; font-size:9pt;
+  width:6.5mm; height:6.5mm; line-height:6.5mm; text-align:center;
+  border-radius:50%; margin-right:2.5mm; vertical-align:1px;
+}
+h3 { font-size:11pt; color:var(--ink-2); margin:4.5mm 0 2.2mm; break-after:avoid; }
+.lede { font-size:10.6pt; color:var(--ink-2); margin-bottom:4mm; }
+
+/* --- callout -------------------------------------------------------- */
+.callout {
+  background:var(--wash-2); border-left:3.5px solid var(--blue);
+  padding:3mm 4mm; border-radius:0 3px 3px 0; margin:0 0 4mm; break-inside:avoid;
+}
+.callout.warn { background:#fdf5e8; border-left-color:var(--amber); }
+.callout.good { background:#edf6f3; border-left-color:var(--teal); }
+.callout .t { font-weight:600; color:var(--navy); margin-bottom:1mm; }
+.callout p:last-child { margin-bottom:0; }
+
+/* --- tables --------------------------------------------------------- *
+ * Deliberately NOT break-inside:avoid. A long table that refuses to split
+ * jumps whole to the next page and strands a near-empty one behind it.
+ * Rows are kept intact instead, and the header repeats on each fragment.  */
+table { width:100%; border-collapse:collapse; margin:0 0 4mm; font-size:8.7pt; }
+thead { display:table-header-group; }
+tr { break-inside:avoid; }
+th { background:var(--navy); color:#fff; text-align:left; padding:2mm 2.4mm; font-weight:600; }
+td { padding:1.9mm 2.4mm; border:1px solid var(--line); vertical-align:top; }
+tbody tr:nth-child(even) td { background:var(--wash); }
+
+/* --- pills ---------------------------------------------------------- */
+.pill {
+  display:inline-block; font-size:7.2pt; font-weight:700; letter-spacing:.4px;
+  text-transform:uppercase; padding:.8mm 2mm; border-radius:8px; white-space:nowrap;
+}
+.pill.done  { background:#d8ede7; color:#1d5f55; }
+.pill.next  { background:#dbe9f7; color:#1d4e80; }
+.pill.block { background:#fbe6e4; color:#8f3129; }
+.pill.wait  { background:#eceff3; color:#4a5866; }
+.pill.staged{ background:#fdf0d3; color:#8a5a12; border:1px solid #e2b463; }
+
+/* --- flow diagram (pure CSS) ---------------------------------------- */
+.flowgrid { display:flex; gap:3mm; align-items:stretch; margin-bottom:4mm; break-inside:avoid; }
+.lane { flex:1; border:1px solid var(--line); border-radius:4px; overflow:hidden; }
+.lane-h { padding:2.2mm 3mm; font-size:8.4pt; font-weight:700; letter-spacing:.5px; text-transform:uppercase; color:#fff; }
+.lane.app .lane-h { background:var(--blue); }
+.lane.cli .lane-h { background:var(--slate); }
+.lane-b { padding:3mm; background:var(--wash); }
+.step {
+  background:#fff; border:1px solid var(--line); border-radius:3px;
+  padding:2.2mm 3mm; margin-bottom:2mm; font-size:8.6pt;
+}
+.step:last-child { margin-bottom:0; }
+.step b { display:block; color:var(--navy); font-size:9pt; }
+.step span { color:var(--muted); font-size:8pt; }
+.arrow { text-align:center; color:var(--blue); font-size:11pt; line-height:1; margin:1mm 0; }
+.hinge {
+  background:var(--navy); color:#fff; border-radius:3px; padding:2.6mm 3mm;
+  text-align:center; font-size:8.8pt; font-weight:600; margin:2mm 0;
+}
+.hinge span { display:block; font-weight:400; opacity:.8; font-size:7.8pt; }
+
+/* --- prompt layer stack --------------------------------------------- */
+.stack { margin-bottom:3mm; break-inside:avoid; }
+.layer {
+  display:flex; align-items:center; gap:3mm; padding:1.9mm 3mm; margin-bottom:1.1mm;
+  border-radius:3px; font-size:8.8pt; color:#fff;
+}
+.layer .nm { font-weight:700; width:24mm; }
+.layer .ds { flex:1; font-size:8.2pt; opacity:.92; }
+.layer .tag { font-size:7.2pt; text-transform:uppercase; letter-spacing:.5px; opacity:.85; }
+.l1{background:#12283f;} .l2{background:#1d4160;} .l3{background:#2b6a86;}
+.l4{background:#3f8b9c;} .l5{background:#b8791f;}
+
+/* --- bars ------------------------------------------------------------ */
+.bars { margin-bottom:4mm; break-inside:avoid; }
+.bar-row { margin-bottom:2.6mm; }
+.bar-top { display:flex; justify-content:space-between; font-size:8.8pt; margin-bottom:1mm; }
+.bar-top b { color:var(--navy); }
+.bar { height:4.5mm; background:#eef2f6; border-radius:3px; overflow:hidden; }
+.bar i { display:block; height:100%; border-radius:3px; }
+
+/* --- roadmap --------------------------------------------------------- */
+.road { border-left:2.5px solid var(--line); margin:0 0 4mm 3mm; padding-left:5mm; }
+.road-item { position:relative; margin-bottom:4mm; break-inside:avoid; }
+.road-item::before {
+  content:""; position:absolute; left:-6.9mm; top:1.2mm; width:3.4mm; height:3.4mm;
+  border-radius:50%; background:#fff; border:2.5px solid var(--blue);
+}
+.road-item.is-done::before { background:var(--teal); border-color:var(--teal); }
+.road-item.is-block::before { border-color:#c0574c; }
+.road-h { display:flex; align-items:baseline; gap:2.5mm; margin-bottom:1mm; }
+.road-h b { font-size:10.4pt; color:var(--navy); }
+.road-beat { background:var(--wash); border:1px solid var(--line); border-left:3px solid var(--teal);
+             padding:2.2mm 3mm; border-radius:0 3px 3px 0; font-size:8.6pt; }
+.road-beat em { font-style:normal; color:var(--teal); font-weight:700;
+                text-transform:uppercase; font-size:7.4pt; letter-spacing:.5px; display:block; }
+
+/* --- delivery stories ------------------------------------------------ */
+.story {
+  border:1px solid var(--line); border-radius:4px; padding:3.4mm 4mm;
+  margin-bottom:3.4mm; break-inside:avoid; background:#fff;
+}
+.story-h { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.4mm; }
+.story-id {
+  font-family:"SF Mono",Menlo,Consolas,monospace; font-size:8.4pt; font-weight:700;
+  color:var(--blue); letter-spacing:.4px;
+}
+.story-t { font-size:11.4pt; color:var(--navy); margin:0 0 1.6mm; }
+.story-n { font-size:9.2pt; color:var(--ink-2); font-style:italic; margin:0 0 2.4mm; }
+.chips { margin-bottom:2.6mm; }
+.chip {
+  display:inline-block; font-size:7.4pt; font-weight:600; letter-spacing:.3px;
+  background:#eef2f6; color:var(--ink-2); border:1px solid var(--line);
+  padding:.7mm 1.9mm; border-radius:3px; margin:0 1.4mm 1.2mm 0;
+}
+.chip.pts { background:var(--navy); color:#fff; border-color:var(--navy); }
+.story-ac, .story-as { font-size:8.5pt; }
+.story-ac { background:var(--wash); border-left:3px solid var(--teal);
+            padding:2.4mm 3mm; border-radius:0 3px 3px 0; margin-bottom:2.2mm; }
+.story-as { background:#fdf5e8; border-left:3px solid var(--amber);
+            padding:2.4mm 3mm; border-radius:0 3px 3px 0; }
+.story-ac b, .story-as b { display:block; color:var(--navy); margin-bottom:1mm; font-size:8.4pt; }
+.story-ac ul, .story-as ul { margin:0; padding-left:4.5mm; }
+.story-ac li, .story-as li { margin-bottom:1mm; }
+.story-ac li b { display:inline; color:var(--teal); margin:0; }
+
+/* --- evidence -------------------------------------------------------- */
+figure { margin:0 0 5mm; break-inside:avoid; }
+figure img { width:100%; border:1px solid var(--line); border-radius:3px; display:block; }
+figcaption { font-size:8.2pt; color:var(--muted); margin-top:1.6mm; }
+figcaption b { color:var(--navy); }
+
+/* --- code block ------------------------------------------------------ */
+pre {
+  background:#f5f8fa; border:1px solid #dfe6ed; border-left:3px solid var(--blue);
+  padding:3mm 3.5mm; border-radius:3px; font-family:"SF Mono",Menlo,Consolas,monospace;
+  font-size:8pt; line-height:1.45; break-inside:avoid; margin:0 0 4mm; overflow-x:auto;
+}
+ul { margin:0 0 3.5mm; padding-left:5.5mm; }
+li { margin-bottom:1.2mm; }
+.two { display:flex; gap:4mm; }
+.two > * { flex:1; }
+.footer-note { margin-top:6mm; padding-top:3mm; border-top:1px solid var(--line); }
+</style>
+</head>
+<body>
+
+<!-- ============================ COVER ============================ -->
+<div class="cover">
+  <div class="eyebrow">AMS Tabletop Exercise &middot; Delivery Scope</div>
+  <h1>S7 — Full-Scale<br>Application Development<br>&amp; Delivery</h1>
+  <div class="rule"></div>
+  <div class="sub">An AI-assisted SDLC taking a business-driven, multi-sprint project
+  from business requirement through design, build, test and production release.</div>
+
+  <div class="cover-tiles">
+    <div class="cover-tile"><div class="n">5 / 5</div><div class="l">Stages running</div></div>
+    <div class="cover-tile"><div class="n">60</div><div class="l">Tests green offline</div></div>
+    <div class="cover-tile"><div class="n">58%</div><div class="l">AI coverage by effort</div></div>
+    <div class="cover-tile"><div class="n">0%</div><div class="l">AI-generated today</div></div>
+  </div>
+
+  <div class="meta">
+    <strong>MapleSure Insurance — demonstration build</strong>
+    Sprint 0 complete (reworked). Every artifact currently STAGED and labelled as such.<br>
+    Prepared 3 August 2026 · Demo date TBD
+  </div>
+</div>
+
+<!-- ======================== 1. AT A GLANCE ======================== -->
+<section class="flow">
+  <h2><span class="num">1</span>Where this stands</h2>
+  <p class="lede">The console runs end to end today. What it renders is staged, not
+  model output — and it says so on every artifact.</p>
+
+  <div class="callout good">
+    <div class="t">The honesty is the demo</div>
+    <p>“Nothing here is AI-generated yet, and the tool says so itself” is a stronger
+    opening than a claim nobody in the room can check. The provenance figure improves
+    every sprint without a single change to how the demo is presented.</p>
+  </div>
+
+  <table>
+    <thead><tr><th style="width:24%">Area</th><th style="width:12%">State</th><th>Detail</th></tr></thead>
+    <tbody>
+      <tr><td>Upstream pipeline</td><td><span class="pill done">Running</span></td>
+          <td>Epic → assessment → design → gate → stories. The gate genuinely blocks.</td></tr>
+      <tr><td>Determinism model</td><td><span class="pill done">Done</span></td>
+          <td>Replay/record/live; a missing recording raises rather than reaching the network.</td></tr>
+      <tr><td>Cache economics</td><td><span class="pill done">Done</span></td>
+          <td>Prompt layers + cache counters landed in the Sprint&nbsp;0 rework.</td></tr>
+      <tr><td>Real AI output</td><td><span class="pill block">Blocked</span></td>
+          <td>Model access awaiting platform-team approval. Every artifact is <span class="pill staged">Staged</span></td></tr>
+      <tr><td>Downstream lane</td><td><span class="pill wait">Not built</span></td>
+          <td>Build → test → docs → release. Blocked on the <code>UserStory</code> contract.</td></tr>
+      <tr><td>Enhancement lane</td><td><span class="pill wait">Not built</span></td>
+          <td>The S3-style mode selector and the KPI scorecard.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Coverage is a deliverable, not a gap</h3>
+  <p>An epic fans out across streams and not all of them are AI-addressable. A mainframe
+  field addition is a manual change every other stream then waits on. The assessment
+  states this rather than hiding it — weighted by effort, not by task count.</p>
+
+  <div class="bars">
+    <div class="bar-row">
+      <div class="bar-top"><b>Agentic</b><span>58% &middot; 21 days</span></div>
+      <div class="bar"><i style="width:58%;background:#2b7a6f"></i></div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-top"><b>Manual</b><span>28% &middot; 10 days</span></div>
+      <div class="bar"><i style="width:28%;background:#5b6b7f"></i></div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-top"><b>AI-assisted, externally owned</b><span>14% &middot; 5 days</span></div>
+      <div class="bar"><i style="width:14%;background:#b8791f"></i></div>
+    </div>
+  </div>
+  <p class="small">An articulated 40–70% beats a claimed 100% that collapses under the
+  first question.</p>
+</section>
+
+<!-- ========================= 2. SURFACES ========================= -->
+<section>
+  <h2><span class="num">2</span>Two surfaces, one pipeline</h2>
+  <p class="lede">The split is not by SDLC phase. It is by who is acting.</p>
+
+  <div class="callout">
+    <div class="t">App = where a human decides or reads. CLI = where an agent executes.</div>
+    <p>The review gate is the hinge. Upstream of it the work is app-led because humans
+    are directing. Downstream of it the work is CLI-led because agents are executing and
+    nobody is watching.</p>
+  </div>
+
+  <div class="flowgrid">
+    <div class="lane app">
+      <div class="lane-h">App — humans direct &amp; review</div>
+      <div class="lane-b">
+        <div class="step"><b>1 · Epic intake</b><span>CLI ingests, app displays</span></div>
+        <div class="arrow">↓</div>
+        <div class="step"><b>2 · Assessment</b><span>Coverage model, effort-weighted</span></div>
+        <div class="arrow">↓</div>
+        <div class="step"><b>3 · Design — DFD / ER</b><span>Rendered diagrams; a terminal cannot show these</span></div>
+      </div>
+    </div>
+    <div class="lane cli">
+      <div class="lane-h">CLI — agents do the work</div>
+      <div class="lane-b">
+        <div class="step"><b>Build</b><span>Long-running, no human watching</span></div>
+        <div class="arrow">↓</div>
+        <div class="step"><b>Test — red / green</b><span>Machine work by definition</span></div>
+        <div class="arrow">↓</div>
+        <div class="step"><b>Docs → Release</b><span>CLI executes, app approves</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hinge">4 · HUMAN REVIEW GATE — the hinge
+    <span>Load-bearing, not optional. A click is a decision; typing “y” is a prompt.</span></div>
+
+  <table>
+    <thead><tr><th style="width:26%">Stage</th><th style="width:22%">Surface</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td>Epic intake</td><td>CLI ingests, app displays</td><td>Ingest is scriptable; reading an epic is human</td></tr>
+      <tr><td>Assessment</td><td><b>App-led</b></td><td>Coverage needs visual effort weighting</td></tr>
+      <tr><td>Design — DFD / ER</td><td><b>App only</b></td><td>The client's brief named “through design” explicitly</td></tr>
+      <tr><td>Review gate</td><td><b>App only</b></td><td>Governance. A click reads as a decision</td></tr>
+      <tr><td>Story breakdown</td><td>App reviews, CLI exports</td><td>Stories leave for a backlog</td></tr>
+      <tr><td>Build / test</td><td><b>CLI only</b></td><td>Machine work</td></tr>
+      <tr><td>Release</td><td>CLI executes, app approves</td><td>Second gate before production</td></tr>
+      <tr><td>Economics / KPIs</td><td><b>Both</b></td><td>One ledger function, rendered twice</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn">
+    <div class="t">What would change this</div>
+    <p>If the locked-down environment cannot serve a port or run a browser, the CLI
+    becomes primary and the console becomes the “how it looks productised” story. That
+    sits behind the same platform-team approval as model access, and is worth asking by
+    email now rather than discovering on the day.</p>
+  </div>
+</section>
+
+<!-- ==================== 3. CACHE ARCHITECTURE ==================== -->
+<section>
+  <h2><span class="num">3</span>Cache-efficient prompt architecture</h2>
+  <p class="lede">A cache read costs roughly a tenth of a fresh input token and an eighth
+  of a cache write. The design target follows: a long identical prefix, reused across many
+  calls, with only a small task delta changing.</p>
+
+  <h3>Prompts assemble in fixed order, most stable first</h3>
+  <div class="stack">
+    <div class="layer l1"><span class="nm">rules</span><span class="ds">Identical for every call in the repo</span><span class="tag">system</span></div>
+    <div class="layer l2"><span class="nm">role</span><span class="ds">Identical for every call of one stage</span><span class="tag">system</span></div>
+    <div class="layer l3"><span class="nm">memory</span><span class="ds">Identical within a run, slow-changing across runs</span><span class="tag">prompt</span></div>
+    <div class="layer l4"><span class="nm">ref</span><span class="ds">Changes between work types, not within a run</span><span class="tag">prompt</span></div>
+    <div class="layer l5"><span class="nm">task</span><span class="ds">The only layer that genuinely changes per call</span><span class="tag">prompt</span></div>
+  </div>
+
+  <p>Providers cache a <b>prefix</b>: put a volatile segment early and everything after it
+  is a miss, however stable. Ordering by stability makes that prefix as long as it can be —
+  the entire mechanism. Plain string assembly; a provider that does no caching is
+  unaffected.</p>
+
+  <div class="callout warn">
+    <div class="t">Why this landed in Sprint 0 rather than later</div>
+    <p>The cache key hashes the assembled prompt by design, so reordering layers
+    invalidates every committed recording at once. At the rework the repo had <b>zero LLM
+    callers and zero recordings</b> — the only point at which the change is free. Prefix
+    order is frozen from Sprint 3 onward, and a test pins it so a change cannot be silent.</p>
+  </div>
+
+  <h3>Measured or unset — never invented</h3>
+  <pre>cache ratio, provider reported nothing : None
+cache ratio, reads but zero writes     : None
+cache ratio, 1000 reads / 100 writes   : 10.0</pre>
+  <p><b>Zero is a measurement; <code>None</code> is an admission.</b> A provider that cannot
+  report cache counters must not look like one that measured a total miss. Applying this
+  found and fixed two latent bugs: a fabricated <code>0</code> when a provider returned no
+  usage object, and a summary collapsing “nobody reported” into “everybody reported zero”.</p>
+
+  <h3>What was adopted from the architecture review</h3>
+  <table>
+    <thead><tr><th style="width:36%">Property</th><th style="width:16%">Verdict</th><th>Reasoning</th></tr></thead>
+    <tbody>
+      <tr><td>Small fixed set of generic roles</td><td><span class="pill next">Adapt</span></td><td>Fragmentation shatters prefix reuse</td></tr>
+      <tr><td>Specialization injected at runtime</td><td><span class="pill next">Adapt</span></td><td>Sound as prompt ordering, not as a framework</td></tr>
+      <tr><td>Shared artifact plane</td><td><span class="pill done">Adopt</span></td><td>Half-present; serves demo reliability</td></tr>
+      <tr><td>Persistent per-agent memory</td><td><span class="pill wait">Defer</span></td><td>Nothing here runs often enough to amortize it</td></tr>
+      <tr><td>Stable rules layer</td><td><span class="pill done">Adopt</span></td><td>Became the prefix convention above</td></tr>
+      <tr><td>Framework-native implementation</td><td><span class="pill block">Reject</span></td><td>Absent from the locked-down sandbox</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ========================= 4. ROADMAP ========================== -->
+<section>
+  <h2><span class="num">4</span>Sprint roadmap</h2>
+  <div class="callout">
+    <div class="t">No sprint ends without a runnable demo beat</div>
+    <p>If a sprint cannot be shown at the end of it, it was scoped wrong. This is the
+    scheduling mechanism, not a presentation nicety — a sprint that can only be described
+    is one whose risk stays invisible until the week is gone.</p>
+  </div>
+
+  <div class="road">
+    <div class="road-item is-done">
+      <div class="road-h"><b>Sprint 0 — Foundation</b><span class="pill done">Done · reworked</span></div>
+      <p class="small">Determinism and cache economics correct before anything depends on them.
+      Prompt layers, cache telemetry, 60 tests green offline.</p>
+      <div class="road-beat"><em>Demo beat</em>Five stages run end to end. The gate genuinely blocks;
+      rejection keeps stories locked. Every artifact badged STAGED.</div>
+    </div>
+
+    <div class="road-item">
+      <div class="road-h"><b>Sprint 1 — Surfaces &amp; run ledger</b><span class="pill next">Next · unblocked</span></div>
+      <p class="small">One ledger function rendered twice. Freezes the <code>UserStory</code>
+      contract — the decision that unblocks the whole downstream.</p>
+      <div class="road-beat"><em>Demo beat</em>The same five beats, runnable in the browser and in
+      the terminal, from one pipeline. The ledger states “0 of 12 artifacts AI-generated”.</div>
+    </div>
+
+    <div class="road-item">
+      <div class="road-h"><b>Sprint 2 — Artifact plane &amp; stage reuse</b></div>
+      <p class="small">Deterministic paths, validation against the contract, early exit.</p>
+      <div class="road-beat"><em>Demo beat</em>Run it twice — stages light up REUSED, not
+      REGENERATED. Kill it mid-run and it resumes. Determinism made visible, and the
+      recovery mechanism if a beat dies in front of the room.</div>
+    </div>
+
+    <div class="road-item is-block" style="break-before:page; padding-top:2mm;">
+      <div class="road-h"><b>Sprint 3 — Real AI output</b><span class="pill block">Blocked · model access</span></div>
+      <p class="small">Provenance flips STAGED → REPLAYED_AI. Economics populate from our own
+      measured runs.</p>
+      <div class="road-beat"><em>Demo beat</em>A fresh clone with zero API keys runs the whole
+      demo offline from committed recordings — the reliability claim made checkable.</div>
+    </div>
+
+    <div class="road-item">
+      <div class="road-h"><b>Sprint 4 — Downstream lane</b></div>
+      <p class="small">Build → test → docs → release against the frozen contract.
+      <b>Deliberately independent of Sprint 3.</b></p>
+      <div class="road-beat"><em>Demo beat</em>One story traverses the full lane. A second gate
+      blocks before release. The app directs; the CLI executes.</div>
+      <div class="callout good" style="margin-top:3mm;">
+        <div class="t">Why Sprint 4 does not depend on Sprint 3</div>
+        <p>Model access is an unresolved external blocker. Routing everything through the
+        model layer means the downstream can be built and demonstrated on staged artifacts,
+        then flip to real output later without changing a line above that layer.
+        <b>If Sprint 3 never lands, Sprint 4 still ships.</b></p>
+      </div>
+    </div>
+
+    <div class="road-item">
+      <div class="road-h"><b>Sprint 5 — Enhancement lane &amp; scorecard</b></div>
+      <p class="small">Mode selector, S3-style lane, delivery KPIs.</p>
+      <div class="road-beat"><em>Demo beat</em>Both entry modes side by side, converging on one
+      build/test/docs/release lane. Blanks — not zeros — for anything one run cannot evidence.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ====================== 5. DELIVERY STORIES ===================== -->
+<section>
+  <h2><span class="num">5</span>Delivery stories</h2>
+<!-- STORIES:BEGIN — generated by demo/render_stories_html.py; do not hand-edit -->
+  <p class="lede">The three stories the gate unlocks, exactly as the console renders them. Each carries its own provenance badge, stream routing and acceptance criteria.</p>
+  <p class="small">3 stories &middot; 29 points total &middot; broken out of EPIC-S7-001 after human review.</p>
+  <article class="story">
+    <div class="story-h">
+      <span class="story-id">S7-001-1</span>
+      <span class="pill staged">staged</span>
+    </div>
+    <h3 class="story-t">Identify the member and confirm their details</h3>
+    <p class="story-n">As a plan sponsor benefits administrator, I want to identify a member from the policy number and member id I already hold and see the details MapleSure holds for them, so that I do not re-key information that has already been recorded and introduce errors.</p>
+    <div class="chips"><span class="chip">Frontend</span><span class="chip">API / Services</span><span class="chip">System of record</span><span class="chip pts">8 points</span></div>
+    <div class="story-ac"><b>Acceptance criteria</b><ul><li><b>AC1</b> — Given a valid policy number and member id for a member my organization sponsors, the member and plan details held against that record are displayed for confirmation.</li><li><b>AC2</b> — Given a member my organization does not sponsor, no member detail is disclosed and the submission cannot proceed.</li><li><b>AC3</b> — Pre-populated details are presented for explicit confirmation and are not treated as attested until I confirm them.</li></ul></div>
+    <div class="story-as"><b>Assumptions to validate with an SME</b><ul><li>The exact set of pre-populated fields is unvalidated — EPIC-S7-001 §10.</li><li>Assumes the T5 system-of-record field addition lands; until it does, this story is verifiable only against a stubbed lookup.</li></ul></div>
+  </article>
+  <article class="story">
+    <div class="story-h">
+      <span class="story-id">S7-001-2</span>
+      <span class="pill staged">staged</span>
+    </div>
+    <h3 class="story-t">Capture the claim details and attach supporting documents</h3>
+    <p class="story-n">As a plan sponsor benefits administrator, I want to enter the disability claim details and attach the supporting statements in one place, so that MapleSure receives a complete packet instead of documents that arrive detached and have to be matched by hand.</p>
+    <div class="chips"><span class="chip">Frontend</span><span class="chip">API / Services</span><span class="chip">Database</span><span class="chip pts">13 points</span></div>
+    <div class="story-ac"><b>Acceptance criteria</b><ul><li><b>AC1</b> — Claim details required to open an intake file can be captured against the confirmed member.</li><li><b>AC2</b> — Multiple documents can be attached to a single submission and remain associated with it.</li><li><b>AC3</b> — Attachments are subject to the existing file type and size policy, and a rejected file explains why.</li><li><b>AC4</b> — An in-progress submission survives a dropped session and can be resumed.</li></ul></div>
+    <div class="story-as"><b>Assumptions to validate with an SME</b><ul><li>Which attachments are mandatory versus optional at submission time is unvalidated — EPIC-S7-001 §10.</li><li>Whether a partial submission may be saved and completed later is unvalidated; AC4 assumes it may.</li></ul></div>
+  </article>
+  <article class="story">
+    <div class="story-h">
+      <span class="story-id">S7-001-3</span>
+      <span class="pill staged">staged</span>
+    </div>
+    <h3 class="story-t">Confirm receipt and expose submission status</h3>
+    <p class="story-n">As a plan sponsor benefits administrator, I want an immediate reference for my submission and a way to see where it sits afterwards, so that I stop phoning the service desk to ask whether it arrived.</p>
+    <div class="chips"><span class="chip">Frontend</span><span class="chip">API / Services</span><span class="chip">Document intake</span><span class="chip pts">8 points</span></div>
+    <div class="story-ac"><b>Acceptance criteria</b><ul><li><b>AC1</b> — On submission I receive an unambiguous confirmation carrying a reference I can quote.</li><li><b>AC2</b> — The submission reaches intake as a single associated packet.</li><li><b>AC3</b> — I can later see the status of submissions my organization made, and only those.</li><li><b>AC4</b> — Every submission records who submitted it, when, and what was attached.</li></ul></div>
+    <div class="story-as"><b>Assumptions to validate with an SME</b><ul><li>The authoritative status values, and who may see each one, are unvalidated — EPIC-S7-001 §10.</li></ul></div>
+  </article>
+<!-- STORIES:END -->
+  <div class="callout warn" style="margin-top:2mm;">
+    <div class="t">The assumptions are part of the deliverable</div>
+    <p>Each story carries what it is <em>assuming</em>, not only what it asserts. All three
+    name a point still awaiting SME validation, and S7-001-1 additionally depends on a
+    system-of-record field addition that is a manual change outside this delivery team —
+    until it lands, that story is verifiable only against a stubbed lookup. This is the
+    dependency that makes the coverage figure honest rather than decorative.</p>
+  </div>
+</section>
+
+<!-- ========================= 6. EVIDENCE ========================= -->
+<section>
+  <h2><span class="num">6</span>Evidence — the console, running</h2>
+  <p class="lede">Captured from a live run on 3 August 2026. Nothing below is a mockup.</p>
+
+  <figure>
+    <img src="assets/console-assess.jpg" alt="Assessment stage showing effort-weighted coverage">
+    <figcaption><b>2 · ASSESS</b> — 6 tasks, 36 days. Coverage weighted by effort, not task
+    count. The STAGED badge is attached to the artifact, not to the page.</figcaption>
+  </figure>
+
+  <figure>
+    <img src="assets/console-dfd.jpg" alt="Data flow diagram with trust boundary">
+    <figcaption><b>3 · DESIGN</b> — the data flow diagram. Note the boundary marked
+    <b>“Outside the delivery team”</b>: the policy system of record and intake/indexing are
+    drawn outside the fence rather than omitted. The coverage model made visual.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <h2><span class="num">7</span>Evidence — the gate is load-bearing</h2>
+
+  <figure>
+    <img src="assets/console-gate-locked.jpg" alt="Gate pending with stories locked">
+    <figcaption><b>Before</b> — gate pending, story breakdown locked, with the reason stated:
+    an epic that jumps straight to stories skips the design step the client's brief asked
+    for.</figcaption>
+  </figure>
+
+  <figure>
+    <img src="assets/console-stories.jpg" alt="Stories unlocked after approval">
+    <figcaption><b>After</b> — reviewer recorded, gate approved, three stories with acceptance
+    criteria and stream routing. Still badged STAGED.</figcaption>
+  </figure>
+
+  <table>
+    <thead><tr><th style="width:34%">Gate decision</th><th style="width:20%">Stories visible</th><th>Effect</th></tr></thead>
+    <tbody>
+      <tr><td>Pending</td><td><b>0</b></td><td>Locked, with the reason shown to the reviewer</td></tr>
+      <tr><td>Approved</td><td><b>3</b></td><td>Unlocked; reviewer and timestamp recorded</td></tr>
+      <tr><td>Rejected</td><td><b>0</b></td><td>Re-locks, and the review comment is retained</td></tr>
+    </tbody>
+  </table>
+  <p class="small">Verified against the running server, not asserted.</p>
+</section>
+
+<!-- =========================== 7. RISK =========================== -->
+<section>
+  <h2><span class="num">8</span>Risks and open items</h2>
+
+  <table>
+    <thead><tr><th style="width:6%">#</th><th style="width:26%">Risk</th><th style="width:22%">Impact</th><th>Mitigation</th></tr></thead>
+    <tbody>
+      <tr><td>R1</td><td>Model access never approved</td><td>Sprint 3 cannot land; demo stays staged</td>
+          <td>Sprint 4 is decoupled by design. The staged labelling is honest and defensible on its own</td></tr>
+      <tr><td>R2</td><td>Sandbox will not serve a port</td><td>Console unusable</td>
+          <td>The CLI from Sprint 1 is the fallback. Confirm by email now, not in the room</td></tr>
+      <tr><td>R3</td><td>An unmeasured figure reaches a slide</td><td>Loses the room</td>
+          <td>Only numbers measured by this repo ship. Empty states read “not measured”, never <code>0</code></td></tr>
+      <tr><td>R4</td><td>One-week clock; staffing unsettled</td><td>Sprints 4–5 slip</td>
+          <td>Ordered so slipping the tail still leaves a coherent demo</td></tr>
+      <tr><td>R5</td><td>Prefix order changed after recordings land</td><td>Every recording invalidated</td>
+          <td><b>Largely retired</b> — the ordering landed in Sprint 0, before any recording existed</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Open items</h3>
+  <ul>
+    <li><b>Model access</b> — approval and interim path both unresolved. The single largest external dependency.</li>
+    <li><b>Browser availability in the locked-down environment</b> — decides whether app or CLI is primary.</li>
+    <li><b>Domain SME validation</b> — forms, required attachments, status names and pre-population rules.</li>
+    <li><b>Staffing</b> — more than one person needed; division of work unsettled.</li>
+    <li><b>Demo date and format</b> — TBD. Sprint sizing is relative; the calendar is not set.</li>
+  </ul>
+
+  <div class="footer-note small">
+    MapleSure Insurance is a fictional demonstration insurer. This pack contains no client
+    data, no production data and no client-identifiable information. Figures shown are
+    measured by this build or marked as unmeasured; no external benchmark is reproduced.
+  </div>
+</section>
+
+</body>
+</html>

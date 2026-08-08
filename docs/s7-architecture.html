@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MapleSure S7 — Architecture &amp; Delivery Flow</title>
+<style>
+  :root {
+    --bg: #0e1116; --card: #171c24; --card-2: #1d232e;
+    --ink: #eef2f7; --soft: #9aa7b8; --line: #2a3341; --line-2: #3a4556;
+    --accent: #e04f4f; --accent-soft: #ff8e6e;
+    --ok: #4fae7c; --warn: #d9a13c; --blue: #5b9dd9;
+    --ok-bg: rgba(79,174,124,.10); --warn-bg: rgba(217,161,60,.10);
+    --red-bg: rgba(224,79,79,.10); --blue-bg: rgba(91,157,217,.10);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--ink);
+         font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif; line-height: 1.5; }
+  .page { max-width: 1180px; margin: 0 auto; padding: 48px clamp(18px, 4vw, 48px) 80px; }
+
+  .kicker { font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--accent-soft); font-weight: 700; }
+  h1 { font-size: clamp(28px, 4.5vw, 44px); line-height: 1.12; margin: 8px 0 10px; }
+  h2 { font-size: clamp(20px, 3vw, 28px); margin: 0 0 6px; }
+  h3 { font-size: 16px; }
+  .lede { color: var(--soft); max-width: 78ch; font-size: 15.5px; }
+
+  section { margin-top: 70px; }
+  .sec-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 6px; }
+  .sec-num { font-family: ui-monospace, Menlo, monospace; color: var(--accent-soft); font-size: 14px; font-weight: 700; }
+  .sec-sub { color: var(--soft); font-size: 14.5px; max-width: 84ch; margin-bottom: 22px; }
+  .sub-h { display: flex; align-items: center; gap: 10px; margin: 34px 0 12px; }
+  .sub-h h3 { font-size: 15px; letter-spacing: .03em; }
+  .sub-h .n { width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: #fff;
+              display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+
+  .b { display: inline-block; font-size: 10px; font-weight: 800; letter-spacing: .07em;
+       padding: 2px 9px; border-radius: 999px; vertical-align: 2px; white-space: nowrap; }
+  .b.live { background: var(--ok-bg); color: var(--ok); border: 1px solid var(--ok); }
+  .b.plan { background: var(--warn-bg); color: var(--warn); border: 1px dashed var(--warn); }
+  .b.gate { background: var(--red-bg); color: var(--accent-soft); border: 1px solid var(--accent); }
+  .b.spec { background: var(--blue-bg); color: var(--blue); border: 1px solid var(--blue); }
+  .legend { display: flex; gap: 8px 18px; flex-wrap: wrap; margin: 14px 0 0; align-items: center; }
+  .legend span.t { color: var(--soft); font-size: 12.5px; margin-right: 6px; }
+
+  .flow-wrap { overflow-x: auto; padding-bottom: 6px; }
+  .flow { display: flex; align-items: stretch; min-width: 880px; }
+  .node { flex: 1; min-width: 124px; background: var(--card); border: 1.5px solid var(--line);
+          border-radius: 12px; padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 6px; }
+  .node.planned { border-style: dashed; border-color: var(--line-2); background: #131820; }
+  .node.gatebox { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(224,79,79,.15); }
+  .node.okbox { border-color: var(--ok); }
+  .node.warnbox { border-color: var(--warn); background: var(--warn-bg); }
+  .node .t { font-weight: 700; font-size: 14.5px; }
+  .node .d { color: var(--soft); font-size: 12px; line-height: 1.45; }
+  .node .icon { font-size: 18px; }
+  .arr { flex: 0 0 36px; display: flex; align-items: center; justify-content: center;
+         color: var(--line-2); font-size: 22px; font-weight: 700; }
+  .arr.red { color: var(--accent); } .arr.green { color: var(--ok); } .arr.amber { color: var(--warn); }
+
+  .loopnote { margin-top: 10px; display: flex; gap: 26px; flex-wrap: wrap; }
+  .loopnote div { color: var(--soft); font-size: 12.5px; padding-left: 20px; position: relative; }
+  .loopnote div::before { content: "↺"; position: absolute; left: 0; color: var(--warn); font-size: 15px; }
+
+  .vjoin { display: flex; flex-direction: column; align-items: center; gap: 4px; margin: 16px 0; }
+  .vjoin .stem { width: 2px; height: 22px; background: linear-gradient(var(--ok), var(--warn)); }
+  .vjoin .cap { color: var(--warn); font-size: 17px; line-height: .6; }
+  .vjoin .lbl { background: var(--card-2); border: 1px solid var(--line); border-radius: 999px;
+                color: var(--soft); font-size: 12.5px; padding: 7px 18px; }
+  .vjoin .lbl code { color: var(--accent-soft); font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+
+  .lane-title { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; }
+  .lane-title h3 { font-size: 15px; letter-spacing: .04em; }
+
+  .svgwrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: #10151c; padding: 12px; }
+  .svgwrap svg { display: block; min-width: 840px; width: 100%; height: auto; }
+  .caption { color: var(--soft); font-size: 12.5px; margin-top: 10px; }
+
+  /* Routing */
+  .route { display: grid; grid-template-columns: 240px 60px 1fr; align-items: center; min-width: 760px; }
+  .route .src { background: var(--card); border: 1.5px solid var(--blue); border-radius: 12px; padding: 16px; }
+  .route .src .t { font-weight: 700; font-size: 14px; }
+  .route .src .d { color: var(--soft); font-size: 12px; margin-top: 4px; }
+  .fan { position: relative; height: 100%; min-height: 220px; }
+  .fan svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .route .outs { display: flex; flex-direction: column; gap: 12px; }
+  .out { border-radius: 12px; padding: 13px 16px; border: 1.5px solid var(--line); background: var(--card); }
+  .out .t { font-weight: 700; font-size: 13.5px; }
+  .out .d { color: var(--soft); font-size: 12px; margin-top: 3px; }
+  .out.a { border-color: var(--ok); background: var(--ok-bg); }
+  .out.b2 { border-color: var(--warn); background: var(--warn-bg); }
+  .out.c { border-color: var(--line-2); }
+
+  /* Skill chips */
+  .skillrow { display: flex; align-items: center; gap: 0; overflow-x: auto; padding: 6px 0; }
+  .skill { flex: 0 0 auto; background: var(--card-2); border: 1px solid var(--blue); border-radius: 10px;
+           padding: 10px 16px; min-width: 128px; text-align: center; }
+  .skill .t { font-family: ui-monospace, Menlo, monospace; font-weight: 700; font-size: 13px; color: var(--blue); }
+  .skill .d { color: var(--soft); font-size: 10.5px; margin-top: 3px; }
+  .skillrow .sl { flex: 0 0 auto; color: var(--line-2); padding: 0 10px; font-size: 16px; }
+
+  .strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .who { border-radius: 12px; padding: 14px 16px; border: 1.5px solid var(--line); background: var(--card); }
+  .who .t { font-weight: 700; font-size: 13.5px; display: flex; align-items: center; gap: 8px; }
+  .who .d { color: var(--soft); font-size: 12.5px; margin-top: 4px; line-height: 1.5; }
+  .who.agent { border-top: 3px solid var(--blue); }
+  .who.human { border-top: 3px solid var(--accent); }
+  .who.rules2 { border-top: 3px solid var(--ok); }
+
+  /* File tree */
+  .filetree { display: grid; grid-template-columns: minmax(300px, 430px) 1fr; gap: 18px; align-items: start; }
+  .tree { background: #0a0d11; color: #e8eef5; border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px;
+          font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; line-height: 1.9;
+          overflow-x: auto; white-space: pre; }
+  .tree .dim { color: #6e7f94; } .tree .hl { color: #ffb38a; } .tree .grn { color: #7fd0a7; }
+  .fnotes { display: flex; flex-direction: column; gap: 10px; }
+  .fnote { border-left: 3px solid var(--line-2); padding: 6px 14px; }
+  .fnote.hot { border-left-color: var(--accent); }
+  .fnote.ok { border-left-color: var(--ok); }
+  .fnote .t { font-weight: 700; font-size: 13.5px; font-family: ui-monospace, Menlo, monospace; }
+  .fnote .d { color: var(--soft); font-size: 12.5px; }
+
+  /* Provenance chain */
+  .chain { display: flex; align-items: center; overflow-x: auto; padding: 4px 0 8px; }
+  .chipx { flex: 0 0 auto; background: var(--card); border: 1.5px solid var(--line); border-radius: 10px;
+           padding: 10px 14px; min-width: 130px; }
+  .chipx .t { font-weight: 700; font-size: 12.5px; }
+  .chipx .d { color: var(--soft); font-size: 11px; margin-top: 2px; }
+  .chain .link { flex: 0 0 auto; padding: 0 8px; color: var(--soft); font-size: 11.5px; text-align: center; }
+  .chain .link b { display: block; color: var(--warn); font-size: 15px; font-weight: 400; }
+
+  /* Modes */
+  .modes { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+  .mode { border-radius: 14px; border: 1.5px solid var(--line); background: var(--card); padding: 16px 18px; }
+  .mode .mt { font-weight: 800; font-size: 14px; display: flex; align-items: center; gap: 10px; }
+  .mode .md { color: var(--soft); font-size: 12.5px; margin-top: 6px; line-height: 1.55; }
+  .mode .pill { font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 999px; }
+  .mode.live .pill { background: var(--ok-bg); color: var(--ok); }
+  .mode.rec .pill { background: var(--blue-bg); color: var(--blue); }
+  .mode.rep .pill { background: var(--warn-bg); color: var(--warn); }
+  .mode .arrows { margin-top: 10px; font-family: ui-monospace, Menlo, monospace; font-size: 12px; color: var(--soft); line-height: 1.8; }
+  .mode .arrows b { color: var(--ink); font-weight: 700; }
+
+  .prefixbar { display: flex; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); min-width: 620px; }
+  .seg { padding: 12px 10px; font-size: 12px; font-weight: 700; text-align: center; color: #a9c6e4; }
+  .seg small { display: block; font-weight: 500; opacity: .7; font-size: 10.5px; }
+  .seg.s1 { flex: 3; background: #24354a; } .seg.s2 { flex: 2; background: #202f42; }
+  .seg.s3 { flex: 2; background: #1c293a; } .seg.s4 { flex: 4; background: #182333; }
+  .seg.s5 { flex: 2; background: var(--warn-bg); color: var(--warn); border-left: 2px dashed var(--warn); }
+
+  /* Architecture */
+  .arch { display: flex; flex-direction: column; }
+  .layer { display: grid; grid-template-columns: 150px 1fr; gap: 16px; border: 1px solid var(--line);
+           border-radius: 14px; background: var(--card); padding: 16px 18px; align-items: center; }
+  .layer.dashed { border-style: dashed; border-color: var(--line-2); background: #131820; }
+  .layer .lname { color: var(--soft); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; }
+  .layer .lname b { display: block; color: var(--ink); font-size: 14px; letter-spacing: 0; text-transform: none; margin-bottom: 2px; }
+  .cells { display: flex; gap: 10px; flex-wrap: wrap; }
+  .cell { background: var(--card-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 13px; min-width: 150px; flex: 1; }
+  .cell.dashed { border-style: dashed; border-color: var(--line-2); background: transparent; }
+  .cell .ct { font-weight: 700; font-size: 13px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .cell .cd { color: var(--soft); font-size: 11.5px; margin-top: 3px; line-height: 1.45; }
+  code { font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: var(--accent-soft); }
+  .down-arrow { display: flex; justify-content: center; color: var(--line-2); font-size: 18px; padding: 5px 0; }
+
+  .rules { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
+  .rule { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+  .rule .rt { font-weight: 700; font-size: 13.5px; display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+  .rule .rd { color: var(--soft); font-size: 12px; margin-top: 4px; line-height: 1.5; }
+  .rule .quote { margin-top: 8px; border-left: 3px solid var(--accent); padding: 5px 10px;
+                 color: var(--accent-soft); font-size: 11.5px; font-style: italic; background: var(--red-bg); border-radius: 0 6px 6px 0; }
+
+  .timeline { display: flex; overflow-x: auto; padding-bottom: 6px; }
+  .tl { flex: 1; min-width: 175px; padding: 0 12px 0 0; }
+  .tl .bar { height: 5px; border-radius: 3px; background: var(--line); margin-bottom: 12px; }
+  .tl.done .bar { background: var(--ok); } .tl.now .bar { background: var(--warn); }
+  .tl .tt { font-weight: 700; font-size: 13.5px; } .tl .td { color: var(--soft); font-size: 11.5px; margin-top: 3px; line-height: 1.5; }
+
+  .footnote { margin-top: 64px; color: #5f6b7c; font-size: 12px; border-top: 1px solid var(--line); padding-top: 16px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="kicker">MapleSure Insurance · AI-assisted delivery · S7 · architecture &amp; flow</div>
+    <h1>One pipeline, two gates,<br>every step to production.</h1>
+    <p class="lede">How a business epic becomes a running release: the AI drafts, the rules check,
+    a human signs — twice. Every part of this document is labelled honestly: what runs today,
+    what is designed, and what is the planned target.</p>
+    <div class="legend">
+      <span class="b live">LIVE</span><span class="t">built — runs today</span>
+      <span class="b spec">DESIGNED</span><span class="t">spec approved, implementation next</span>
+      <span class="b plan">PLANNED</span><span class="t">target shape — Sprint 2</span>
+      <span class="b gate">GATE</span><span class="t">a human decision that genuinely blocks</span>
+    </div>
+  </header>
+
+  <!-- ============ 1 · JOURNEY ============ -->
+  <section>
+    <div class="sec-head"><span class="sec-num">01</span><h2>The journey at a glance</h2></div>
+    <p class="sec-sub">Two lanes joined by a signed file. Upstream, humans decide in the app.
+    Downstream, agents execute and a human approves the release.</p>
+
+    <div class="lane-title"><h3>UPSTREAM — plan the work</h3><span class="b live">LIVE</span></div>
+    <div class="flow-wrap">
+      <div class="flow">
+        <div class="node"><span class="icon">📄</span><span class="t">Epic in</span>
+          <span class="d">Paste, upload or drag the business epic.</span></div>
+        <div class="arr">→</div>
+        <div class="node"><span class="icon">💬</span><span class="t">AI clarifies</span>
+          <span class="d">Asks only what changes the plan; blanks become stated assumptions.</span></div>
+        <div class="arr">→</div>
+        <div class="node"><span class="icon">🗂</span><span class="t">Draft plan</span>
+          <span class="d">Requirements → stories with criteria, estimates, owners, sprints.</span></div>
+        <div class="arr">→</div>
+        <div class="node"><span class="icon">🧑‍💼</span><span class="t">Human shapes</span>
+          <span class="d">Reassign · re-estimate · move · feedback → AI revision.</span></div>
+        <div class="arr red">→</div>
+        <div class="node gatebox"><span class="icon">✍️</span><span class="t">Sign-off <span class="b gate">GATE 1</span></span>
+          <span class="d">Named approver. Plan locks — server refuses all later edits.</span></div>
+      </div>
+    </div>
+
+    <div class="vjoin">
+      <div class="stem"></div><div class="cap">▼</div>
+      <div class="lbl">The signed artifact: <code>plan.json</code> + <code>plan.md</code> — see § 03</div>
+      <div class="cap">▼</div>
+    </div>
+
+    <div class="lane-title"><h3>DOWNSTREAM — execute the work</h3><span class="b plan">PLANNED · Sprint 2</span></div>
+    <div class="flow-wrap">
+      <div class="flow">
+        <div class="node planned"><span class="icon">🎯</span><span class="t">Task picked</span>
+          <span class="d">One task at a time enters the lane.</span></div>
+        <div class="arr">→</div>
+        <div class="node planned"><span class="icon">🔴</span><span class="t">Test first</span>
+          <span class="d">A failing test from the acceptance criteria.</span></div>
+        <div class="arr">→</div>
+        <div class="node planned"><span class="icon">🔧</span><span class="t">Develop</span>
+          <span class="d">Agent writes code until the test passes.</span></div>
+        <div class="arr">→</div>
+        <div class="node planned"><span class="icon">🟢</span><span class="t">Verify</span>
+          <span class="d">Checked against the signed criteria.</span></div>
+        <div class="arr">→</div>
+        <div class="node planned"><span class="icon">📚</span><span class="t">Docs</span>
+          <span class="d">Generated with the change.</span></div>
+        <div class="arr red">→</div>
+        <div class="node planned gatebox"><span class="icon">✅</span><span class="t">Release <span class="b gate">GATE 2</span></span>
+          <span class="d">Human approves; script executes.</span></div>
+        <div class="arr green">→</div>
+        <div class="node planned okbox"><span class="icon">🚀</span><span class="t">Production</span>
+          <span class="d">Ships dark behind its flag.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 2 · UPSTREAM DEEP DIVE ============ -->
+  <section>
+    <div class="sec-head"><span class="sec-num">02</span><h2>Upstream — plan the work</h2><span class="b live">LIVE</span></div>
+    <p class="sec-sub">The half that runs today, end to end, on real model calls. Two bounded loops,
+    a set of human controls, and a gate that locks. This is where an epic stops being a document and
+    becomes a committed, owned, estimated plan.</p>
+
+    <div class="sub-h"><span class="n">A</span><h3>The shape — two loops, then a lock</h3></div>
+    <div class="svgwrap">
+    <svg viewBox="0 0 980 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Upstream flow with loops">
+      <defs>
+        <marker id="u1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#5f6b7c"/></marker>
+        <marker id="u2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#d9a13c"/></marker>
+        <marker id="u3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#e04f4f"/></marker>
+      </defs>
+
+      <!-- Human lane label -->
+      <text x="20" y="40" fill="#d9a13c" font-size="11" letter-spacing="2">HUMAN</text>
+      <text x="20" y="185" fill="#5b9dd9" font-size="11" letter-spacing="2">AI + RULES</text>
+
+      <!-- Human row -->
+      <rect x="180" y="20" width="150" height="48" rx="10" fill="#171c24" stroke="#d9a13c"/>
+      <text x="255" y="41" fill="#eef2f7" font-size="12.5" text-anchor="middle" font-weight="700">Answers questions</text>
+      <text x="255" y="57" fill="#9aa7b8" font-size="10" text-anchor="middle">or leaves blanks — stated</text>
+
+      <rect x="560" y="20" width="170" height="48" rx="10" fill="#171c24" stroke="#d9a13c"/>
+      <text x="645" y="38" fill="#eef2f7" font-size="12.5" text-anchor="middle" font-weight="700">Shapes the draft</text>
+      <text x="645" y="54" fill="#9aa7b8" font-size="10" text-anchor="middle">reassign · points · sprint · feedback</text>
+
+      <!-- AI row -->
+      <rect x="20" y="200" width="110" height="56" rx="10" fill="#171c24" stroke="#2a3341"/>
+      <text x="75" y="224" fill="#eef2f7" font-size="12.5" text-anchor="middle" font-weight="700">Epic in</text>
+      <text x="75" y="240" fill="#9aa7b8" font-size="10" text-anchor="middle">≥ 200 chars or refused</text>
+
+      <rect x="180" y="200" width="150" height="56" rx="10" fill="#171c24" stroke="#5b9dd9"/>
+      <text x="255" y="224" fill="#eef2f7" font-size="12.5" text-anchor="middle" font-weight="700">AI clarifies</text>
+      <text x="255" y="240" fill="#9aa7b8" font-size="10" text-anchor="middle">2–4 questions · ×2 rounds max</text>
+
+      <rect x="390" y="200" width="120" height="56" rx="10" fill="#171c24" stroke="#5b9dd9"/>
+      <text x="450" y="224" fill="#eef2f7" font-size="12.5" text-anchor="middle" font-weight="700">Draft plan</text>
+      <text x="450" y="240" fill="#9aa7b8" font-size="10" text-anchor="middle">validated before shown</text>
+
+      <rect x="560" y="200" width="170" height="56" rx="10" fill="#171c24" stroke="#5b9dd9"/>
+      <text x="645" y="224" fill="#eef2f7" font-size="12.5" text-anchor="middle" font-weight="700">AI revision</text>
+      <text x="645" y="240" fill="#9aa7b8" font-size="10" text-anchor="middle">×2 max · same validator re-checks</text>
+
+      <rect x="800" y="188" width="160" height="80" rx="12" fill="#171c24" stroke="#e04f4f" stroke-width="2"/>
+      <text x="880" y="215" fill="#ff8e6e" font-size="13" text-anchor="middle" font-weight="800">GATE 1 · SIGN-OFF</text>
+      <text x="880" y="233" fill="#eef2f7" font-size="11" text-anchor="middle">named approver + note</text>
+      <text x="880" y="249" fill="#9aa7b8" font-size="10" text-anchor="middle">plan locks — edits refused</text>
+
+      <!-- main arrows -->
+      <path d="M 130 228 H 178" stroke="#5f6b7c" stroke-width="1.6" fill="none" marker-end="url(#u1)"/>
+      <path d="M 330 228 H 388" stroke="#5f6b7c" stroke-width="1.6" fill="none" marker-end="url(#u1)"/>
+      <path d="M 510 228 H 558" stroke="#5f6b7c" stroke-width="1.6" fill="none" marker-end="url(#u1)"/>
+      <path d="M 730 228 H 798" stroke="#e04f4f" stroke-width="1.8" fill="none" marker-end="url(#u3)"/>
+
+      <!-- clarify loop -->
+      <path d="M 235 200 V 70" stroke="#d9a13c" stroke-width="1.6" fill="none" marker-end="url(#u2)"/>
+      <path d="M 275 68 V 198" stroke="#d9a13c" stroke-width="1.6" fill="none" marker-end="url(#u2)"/>
+      <text x="310" y="140" fill="#d9a13c" font-size="10.5">loop ↺ capped at 2</text>
+
+      <!-- shaping loop -->
+      <path d="M 625 200 V 70" stroke="#d9a13c" stroke-width="1.6" fill="none" marker-end="url(#u2)"/>
+      <path d="M 665 68 V 198" stroke="#d9a13c" stroke-width="1.6" fill="none" marker-end="url(#u2)"/>
+      <text x="700" y="140" fill="#d9a13c" font-size="10.5">edits logged · revisions ×2</text>
+
+      <!-- human edits direct to gate -->
+      <path d="M 732 44 H 880 V 186" stroke="#d9a13c" stroke-width="1.4" fill="none" stroke-dasharray="5 4" marker-end="url(#u2)"/>
+      <text x="770" y="36" fill="#8a7434" font-size="10">the same human signs</text>
+
+      <!-- review log -->
+      <rect x="560" y="285" width="170" height="26" rx="8" fill="none" stroke="#3a4556" stroke-dasharray="4 4"/>
+      <text x="645" y="302" fill="#9aa7b8" font-size="10.5" text-anchor="middle">every action → review log (who · what · when)</text>
+      <path d="M 645 258 V 283" stroke="#3a4556" stroke-width="1.4" fill="none" marker-end="url(#u1)"/>
+    </svg>
+    </div>
+
+    <div class="sub-h"><span class="n">B</span><h3>What the human actually controls</h3></div>
+    <div class="strip">
+      <div class="who human"><div class="t">🎛 On every story card</div>
+        <div class="d"><b>Lead</b> (skill-matched roster only) · <b>estimate</b> (Fibonacci scale) ·
+        <b>sprint</b> (dependency-checked). Each change badges the story <i>human-shaped</i> and lands in the log.</div></div>
+      <div class="who human"><div class="t">↩️ On the whole draft</div>
+        <div class="d">Written feedback sends the plan back — the AI revises, the validator re-checks,
+        capped at two rounds so revision is a decision, not a slot machine.</div></div>
+      <div class="who human"><div class="t">✍️ At the gate</div>
+        <div class="d">A named sign-off with a note. After it: locked. The server refuses every edit,
+        naming the approver — immutability as a rule, not a greyed-out button.</div></div>
+    </div>
+
+    <div class="sub-h"><span class="n">C</span><h3>Why this beats "epic → stories" in one hop</h3></div>
+    <div class="strip">
+      <div class="who"><div class="t">1 · Unknowns become visible</div>
+        <div class="d">A one-hop breakdown silently guesses at everything the epic leaves open. Here every
+        unanswered question is carried as a <b>stated assumption on the exact story it affects</b> — the room
+        can see what the plan rests on.</div></div>
+      <div class="who"><div class="t">2 · Coverage is proven before commitment</div>
+        <div class="d">The requirements inventory comes first, and every requirement must be claimed by a
+        story — computed from ids, not asserted. "Did we miss anything?" is answered by a table, not a feeling.</div></div>
+      <div class="who"><div class="t">3 · A human owns the result</div>
+        <div class="d">Nothing reaches execution unsigned. The plan that enters the downstream lane carries a
+        name, a timestamp and a review trail — which is what makes the automation after it defensible.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ 3 · ARTIFACT PLANE ============ -->
+  <section>
+    <div class="sec-head"><span class="sec-num">03</span><h2>The artifact plane — files, not conversations</h2>
+      <span class="b spec">DESIGNED</span></div>
+    <p class="sec-sub">Every meaningful thing the pipeline produces becomes a <b>file at a path you can
+    predict</b>, validated against the contract before anything consumes it. Nothing dies with a process,
+    every handoff is checkable, and any artifact traces back to what caused it.</p>
+
+    <div class="sub-h"><span class="n">A</span><h3>What lands on disk</h3></div>
+    <div class="filetree">
+      <div class="tree">
+<span class="dim">artifacts/intake/</span>epic-s7-001-20260806/
+├─ <span class="hl">session.json</span>   <span class="dim">← source of truth, written on</span>
+│                  <span class="dim">every change, atomically</span>
+├─ <span class="hl">review.jsonl</span>   <span class="dim">← append-only audit trail,</span>
+│                  <span class="dim">one line per human decision</span>
+├─ <span class="grn">plan.json</span>      <span class="dim">← written at sign-off:</span>
+│                  <span class="dim">the machine handoff</span>
+└─ <span class="grn">plan.md</span>        <span class="dim">← written at sign-off:</span>
+                   <span class="dim">the signed, readable record</span>
+      </div>
+      <div class="fnotes">
+        <div class="fnote"><div class="t">session.json</div>
+          <div class="d">Epic text, conversation, draft plan, edits, approval state. Disk first, memory second —
+          if the write fails the change is rejected, so the screen never lies about what is saved.</div></div>
+        <div class="fnote hot"><div class="t">review.jsonl</div>
+          <div class="d">"Who changed that estimate?" is a log line with a timestamp. Append-only: history cannot be rewritten.</div></div>
+        <div class="fnote ok"><div class="t">plan.json → the downstream lane's input</div>
+          <div class="d">Contract-shaped: stories, tasks, acceptance-criterion ids, owners, flags, rollback plans.
+          This file <b>is</b> the interface between planning and execution.</div></div>
+        <div class="fnote ok"><div class="t">plan.md → the governance receipt</div>
+          <div class="d">Human-readable: stories, review trail, assumptions with their answers, and who signed, when, with what note.</div></div>
+      </div>
+    </div>
+
+    <div class="sub-h"><span class="n">B</span><h3>The provenance chain — everything points at what caused it</h3></div>
+    <div class="chain">
+      <div class="chipx"><div class="t">📄 Epic</div><div class="d">the business ask</div></div>
+      <div class="link"><b>→</b>derived from</div>
+      <div class="chipx"><div class="t">🗂 plan.json</div><div class="d">signed at Gate 1</div></div>
+      <div class="link"><b>→</b>satisfies AC-ids</div>
+      <div class="chipx"><div class="t">🎯 Task</div><div class="d">unit of execution</div></div>
+      <div class="link"><b>→</b>produces</div>
+      <div class="chipx"><div class="t">🔧 Code + tests</div><div class="d">task artifact</div></div>
+      <div class="link"><b>→</b>evidenced by</div>
+      <div class="chipx"><div class="t">🧪 Test report</div><div class="d">red → green record</div></div>
+      <div class="link"><b>→</b>approved into</div>
+      <div class="chipx"><div class="t">🚀 Release record</div><div class="d">signed at Gate 2</div></div>
+    </div>
+    <p class="caption">Walk any artifact backwards and you reach the requirement that justified it.
+    Traceability is a <b>field</b>, not a paragraph written afterwards.</p>
+
+    <div class="sub-h"><span class="n">C</span><h3>Why files beat chat for the handoff</h3></div>
+    <div class="strip">
+      <div class="who"><div class="t">🔁 Survives everything</div>
+        <div class="d">Restart, crash, laptop change — the session reloads from disk. A demo interrupted mid-beat resumes instead of restarting.</div></div>
+      <div class="who"><div class="t">🔀 Crosses the surface switch</div>
+        <div class="d">Browser-side planning and IDE-side execution use different tools and different models.
+        Context carries because the handoff is a <b>validated file at a deterministic path</b> — not a conversation the next model never saw.</div></div>
+      <div class="who"><div class="t">🔍 Checkable before use</div>
+        <div class="d">Every consumer validates the file against the contract before running. A stage fed a bad artifact refuses loudly instead of guessing.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ 4 · DOWNSTREAM DEEP DIVE ============ -->
+  <section>
+    <div class="sec-head"><span class="sec-num">04</span><h2>Downstream, step by step — execute the work</h2>
+      <span class="b plan">PLANNED · Sprint 2</span></div>
+    <p class="sec-sub">Four steps: <b>route</b> the work · <b>understand</b> it · <b>build</b> it ·
+    <b>release</b> it. The signed plan comes in; a running feature comes out.</p>
+
+    <div class="sub-h"><span class="n">1</span><h3>Route — decide who does what</h3></div>
+    <div class="flow-wrap">
+      <div class="route">
+        <div class="src">
+          <div class="t">The signed plan</div>
+          <div class="d"><code>plan.json</code> fans out into tasks — routed by stream, skill and
+          repo access. Honest 40–70% AI coverage, said out loud.</div>
+        </div>
+        <div class="fan">
+          <svg viewBox="0 0 60 220" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M 2 110 C 30 110, 30 34, 58 34" stroke="#4fae7c" stroke-width="2" fill="none"/>
+            <path d="M 2 110 H 58" stroke="#d9a13c" stroke-width="2" fill="none"/>
+            <path d="M 2 110 C 30 110, 30 186, 58 186" stroke="#3a4556" stroke-width="2" fill="none"/>
+          </svg>
+        </div>
+        <div class="outs">
+          <div class="out a"><div class="t">AGENTIC → the lane below</div>
+            <div class="d">Small, testable, in a repo the agent can touch.</div></div>
+          <div class="out b2"><div class="t">AI-ASSISTED, EXTERNAL → a ticket</div>
+            <div class="d">Another team owns it; the AI drafts, a human delivers.</div></div>
+          <div class="out c"><div class="t">MANUAL → labelled hand-work</div>
+            <div class="d">Never quietly counted as AI coverage.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sub-h"><span class="n">2</span><h3>Understand — the developer pulls the bundle and asks first</h3></div>
+    <p class="sec-sub">The developer downloads <code>plan.json</code> + <code>plan.md</code> and works
+    locally, in the IDE. The first command is not "write code" — it is <b>"explain this to me."</b>
+    Every skill reads the same files, so nothing upstream gets re-explained or re-guessed.</p>
+    <div class="strip">
+      <div class="who agent"><div class="t">🧑‍💻 Developer skills</div>
+        <div class="d">
+        <code>/explain-story</code> — the story in context<br>
+        <code>/impact-map</code> — what it touches, what depends on it<br>
+        <code>/codegen</code> — smallest change that passes</div></div>
+      <div class="who rules2"><div class="t">🧪 Tester skills</div>
+        <div class="d">
+        <code>/explain-criteria</code> — each AC-id, plainly<br>
+        <code>/test-scenarios</code> — happy · edge · negative<br>
+        <code>/testgen</code> — failing tests first</div></div>
+      <div class="who"><div class="t">🧭 One grounding file</div>
+        <div class="d">The target repo carries <code>architecture.md</code> — what the app is and is
+        <b>not</b>. Every skill reads it. The repository carries the context; no fine-tuning.</div></div>
+    </div>
+
+    <div class="sub-h"><span class="n">3</span><h3>Build — the loop, red to green</h3></div>
+    <div class="svgwrap">
+    <svg viewBox="0 0 980 330" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Task execution loop">
+      <defs>
+        <marker id="m1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#5f6b7c"/></marker>
+        <marker id="m2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#e04f4f"/></marker>
+        <marker id="m3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#4fae7c"/></marker>
+      </defs>
+
+      <rect x="18" y="60" width="130" height="64" rx="10" fill="#171c24" stroke="#5b9dd9" stroke-width="1.5"/>
+      <text x="83" y="87" fill="#eef2f7" font-size="13" text-anchor="middle" font-weight="700">Task + criteria</text>
+      <text x="83" y="104" fill="#9aa7b8" font-size="10.5" text-anchor="middle">from plan.json</text>
+
+      <rect x="190" y="60" width="150" height="64" rx="10" fill="rgba(224,79,79,.08)" stroke="#e04f4f" stroke-width="1.5"/>
+      <text x="265" y="87" fill="#eef2f7" font-size="13" text-anchor="middle" font-weight="700">Write failing test</text>
+      <text x="265" y="104" fill="#ff8e6e" font-size="10.5" text-anchor="middle">RED — testgen · from AC-n</text>
+      <path d="M 148 92 H 188" stroke="#5f6b7c" stroke-width="1.6" fill="none" marker-end="url(#m1)"/>
+
+      <rect x="382" y="60" width="150" height="64" rx="10" fill="#171c24" stroke="#2a3341" stroke-width="1.5"/>
+      <text x="457" y="87" fill="#eef2f7" font-size="13" text-anchor="middle" font-weight="700">Generate code</text>
+      <text x="457" y="104" fill="#9aa7b8" font-size="10.5" text-anchor="middle">codegen · smallest change</text>
+      <path d="M 340 92 H 380" stroke="#5f6b7c" stroke-width="1.6" fill="none" marker-end="url(#m1)"/>
+
+      <rect x="574" y="60" width="130" height="64" rx="10" fill="#171c24" stroke="#2a3341" stroke-width="1.5"/>
+      <text x="639" y="87" fill="#eef2f7" font-size="13" text-anchor="middle" font-weight="700">Run tests</text>
+      <text x="639" y="104" fill="#9aa7b8" font-size="10.5" text-anchor="middle">testrun · full suite</text>
+      <path d="M 532 92 H 572" stroke="#5f6b7c" stroke-width="1.6" fill="none" marker-end="url(#m1)"/>
+
+      <g transform="translate(770 92)">
+        <rect x="-46" y="-30" width="92" height="60" rx="12" transform="rotate(45)" fill="rgba(217,161,60,.10)" stroke="#d9a13c" stroke-width="1.5"/>
+        <text x="0" y="-2" fill="#eef2f7" font-size="12.5" text-anchor="middle" font-weight="700">green?</text>
+        <text x="0" y="14" fill="#d9a13c" font-size="9.5" text-anchor="middle">max N tries</text>
+      </g>
+      <path d="M 704 92 H 724" stroke="#5f6b7c" stroke-width="1.6" fill="none" marker-end="url(#m1)"/>
+
+      <path d="M 770 158 V 200 H 457 V 128" stroke="#e04f4f" stroke-width="1.6" fill="none" stroke-dasharray="6 4" marker-end="url(#m2)"/>
+      <text x="600" y="192" fill="#ff8e6e" font-size="11" font-weight="700">NO — failure triaged back to the exact step that must fix it</text>
+
+      <path d="M 816 92 H 848" stroke="#4fae7c" stroke-width="1.8" fill="none" marker-end="url(#m3)"/>
+      <text x="826" y="82" fill="#4fae7c" font-size="11" font-weight="700">YES</text>
+      <rect x="850" y="60" width="118" height="64" rx="10" fill="rgba(79,174,124,.08)" stroke="#4fae7c" stroke-width="1.5"/>
+      <text x="909" y="83" fill="#eef2f7" font-size="13" text-anchor="middle" font-weight="700">Verify vs</text>
+      <text x="909" y="99" fill="#eef2f7" font-size="13" text-anchor="middle" font-weight="700">criteria</text>
+      <text x="909" y="114" fill="#4fae7c" font-size="9.5" text-anchor="middle">goal, not just tests</text>
+
+      <path d="M 909 124 V 250 H 704" stroke="#5f6b7c" stroke-width="1.6" fill="none" marker-end="url(#m1)"/>
+      <rect x="560" y="222" width="142" height="56" rx="10" fill="#171c24" stroke="#2a3341" stroke-width="1.5"/>
+      <text x="631" y="246" fill="#eef2f7" font-size="13" text-anchor="middle" font-weight="700">Docs generated</text>
+      <text x="631" y="262" fill="#9aa7b8" font-size="10.5" text-anchor="middle">docgen · linked in app</text>
+
+      <rect x="330" y="222" width="180" height="56" rx="10" fill="#171c24" stroke="#5b9dd9" stroke-width="1.5"/>
+      <text x="420" y="246" fill="#eef2f7" font-size="13" text-anchor="middle" font-weight="700">Task artifact written</text>
+      <text x="420" y="262" fill="#9aa7b8" font-size="10.5" text-anchor="middle">code + tests + report → § 03</text>
+      <path d="M 558 250 H 512" stroke="#5f6b7c" stroke-width="1.6" fill="none" marker-end="url(#m1)"/>
+
+      <rect x="18" y="222" width="270" height="56" rx="10" fill="rgba(217,161,60,.08)" stroke="#d9a13c" stroke-width="1.5" stroke-dasharray="5 4"/>
+      <text x="153" y="243" fill="#eef2f7" font-size="12" text-anchor="middle" font-weight="700">Cap hit? The run reports its failures.</text>
+      <text x="153" y="260" fill="#d9a13c" font-size="10.5" text-anchor="middle">Partial output is never presented as success.</text>
+      <path d="M 328 250 H 292" stroke="#5f6b7c" stroke-width="1.6" fill="none" marker-end="url(#m1)"/>
+
+      <text x="490" y="318" fill="#5f6b7c" font-size="11" text-anchor="middle">Bounded and honest: capped retries, failures triaged to the responsible step, final check against the signed acceptance criteria — the contract from Gate 1.</text>
+    </svg>
+    </div>
+
+    <div class="sub-h"><span class="n">4</span><h3>Release — a human approves, a script executes</h3></div>
+    <div class="flow-wrap">
+      <div class="flow">
+        <div class="node planned gatebox"><span class="icon">🧑‍⚖️</span><span class="t">Gate 2 <span class="b gate">GATE</span></span>
+          <span class="d">A named human reads the evidence — tests, coverage, docs — and clicks. The click is the decision.</span></div>
+        <div class="arr green">→</div>
+        <div class="node planned"><span class="icon">🚀</span><span class="t">Deploy — dark</span>
+          <span class="d">Ships <b>off</b> behind its feature flag. Production unchanged for users.</span></div>
+        <div class="arr green">→</div>
+        <div class="node planned okbox"><span class="icon">💡</span><span class="t">Flag on — live</span>
+          <span class="d">Launch is a separate business decision from deploy.</span></div>
+        <div class="arr amber">⇠</div>
+        <div class="node planned"><span class="icon">↩️</span><span class="t">Rollback = flag off</span>
+          <span class="d">Written on the story at planning time — not invented during an incident.</span></div>
+      </div>
+    </div>
+    <p class="caption" style="margin-top:14px"><b>Who does what, in one line:</b> the agent builds and
+    leaves a file at every step · the human signs, steers and approves · the rules verify — and no phase
+    approves its own output.</p>
+  </section>
+
+  <!-- ============ 5 · ARCHITECTURE ============ -->
+  <section>
+    <div class="sec-head"><span class="sec-num">05</span><h2>Architecture — thin surfaces, one rules engine</h2></div>
+    <p class="sec-sub">Plain Python and files all the way down — no cloud services, no Docker, no build step —
+    so the system survives a port into a locked-down environment. Rules live in exactly one place; screens
+    cannot bypass them.</p>
+    <div class="arch">
+      <div class="layer">
+        <div class="lname"><b>People</b>who acts where</div>
+        <div class="cells">
+          <div class="cell"><div class="ct">Product owner / BA <span class="b live">LIVE</span></div>
+            <div class="cd">Browser: reads, shapes, signs. The app is where humans decide.</div></div>
+          <div class="cell dashed"><div class="ct">Developer / agent <span class="b plan">PLANNED</span></div>
+            <div class="cd">IDE / CLI, where code, compiler and tests live. The CLI is where agents execute.</div></div>
+        </div>
+      </div>
+      <div class="down-arrow">▼</div>
+      <div class="layer">
+        <div class="lname"><b>Surfaces</b>views, zero rules</div>
+        <div class="cells">
+          <div class="cell"><div class="ct">Epic intake app <span class="b live">LIVE</span></div>
+            <div class="cd"><code>apps/intake</code> — clarify chat, draft cards with human controls, Gate 1.</div></div>
+          <div class="cell"><div class="ct">Delivery console <span class="b live">LIVE</span></div>
+            <div class="cd"><code>apps/console</code> — assessment, DFD/ER diagrams, review gate.</div></div>
+          <div class="cell dashed"><div class="ct">CLI <span class="b plan">PLANNED</span></div>
+            <div class="cd">Run transcript, exports — and the surface that drives the downstream lane.</div></div>
+        </div>
+      </div>
+      <div class="down-arrow">▼</div>
+      <div class="layer">
+        <div class="lname"><b>HTTP</b>deliberately thin</div>
+        <div class="cells">
+          <div class="cell"><div class="ct">FastAPI servers <span class="b live">LIVE</span></div>
+            <div class="cd">Validate shape, call the engine, return state. <b>No rule lives here.</b></div></div>
+        </div>
+      </div>
+      <div class="down-arrow">▼</div>
+      <div class="layer">
+        <div class="lname"><b>Rules engine</b>the law</div>
+        <div class="cells">
+          <div class="cell"><div class="ct">Intake engine <span class="b live">LIVE</span></div>
+            <div class="cd"><code>s7_delivery/intake.py</code> — question cap · quality bar · roster + skills ·
+            computed coverage · revision caps · approval lock. Binds AI <b>and</b> humans.</div></div>
+          <div class="cell"><div class="ct">Stage pipeline <span class="b live">LIVE</span></div>
+            <div class="cd"><code>s7_delivery/pipeline.py</code> — console stage orchestration and gates.</div></div>
+          <div class="cell"><div class="ct">The contract <span class="b live">LIVE</span></div>
+            <div class="cd"><code>s7_delivery/models.py</code> — <code>UserStory → Task</code>, criterion ids,
+            provenance. The downstream lane's interface.</div></div>
+        </div>
+      </div>
+      <div class="down-arrow">▼</div>
+      <div class="layer">
+        <div class="lname"><b>Foundation</b>every AI call</div>
+        <div class="cells">
+          <div class="cell"><div class="ct">Prompt layers <span class="b live">LIVE</span></div>
+            <div class="cd"><code>common/prompt.py</code> — fixed prefix order: rules → role → memory → ref → task;
+            only the task delta changes, so the provider cache does the remembering.</div></div>
+          <div class="cell"><div class="ct">LLM gateway <span class="b live">LIVE</span></div>
+            <div class="cd"><code>common/llm.py</code> — 5 providers, live / record / replay, prompt-hashed cache keys.</div></div>
+          <div class="cell"><div class="ct">Telemetry <span class="b live">LIVE</span></div>
+            <div class="cd"><code>common/telemetry.py</code> — seconds, tokens, cache counters from the provider's
+            own usage block. Never invented.</div></div>
+        </div>
+      </div>
+      <div class="down-arrow">▼</div>
+      <div class="layer dashed">
+        <div class="lname"><b>Artifact plane</b>§ 03</div>
+        <div class="cells">
+          <div class="cell dashed"><div class="ct">Session store + handoff <span class="b spec">DESIGNED</span></div>
+            <div class="cd"><code>artifacts/…/session.json · review.jsonl · plan.json · plan.md</code></div></div>
+          <div class="cell dashed"><div class="ct">Stage reuse <span class="b plan">PLANNED</span></div>
+            <div class="cd">Valid output exists → stage skips, run resumes. Recovery mid-demo, not restart.</div></div>
+        </div>
+      </div>
+      <div class="down-arrow">▼</div>
+      <div class="layer">
+        <div class="lname"><b>Providers</b>swappable</div>
+        <div class="cells">
+          <div class="cell"><div class="ct">Anthropic · OpenAI · Google · Groq · custom <span class="b live">LIVE</span></div>
+            <div class="cd">Env-selected; OpenAI-compatible <code>custom</code> covers self-hosted gateways.
+            <b>Replay runs everything offline with zero keys.</b></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 6 · GOVERNANCE ============ -->
+  <section>
+    <div class="sec-head"><span class="sec-num">06</span><h2>The governance shape — two loops, one contract</h2></div>
+    <p class="sec-sub">The whole system in one sentence: <b>the first loop argues until a human signs what
+    "done" means · the contract carries that definition across · the second loop builds until "done" is
+    provably met.</b> And in neither loop does anything mark its own work correct.</p>
+
+    <div class="sub-h"><span class="n">1</span><h3>Upstream loop — agree what "done" means</h3><span class="b live">LIVE</span></div>
+    <div class="svgwrap">
+    <svg viewBox="0 0 960 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Upstream loop, simplified">
+      <defs>
+        <marker id="s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#5f6b7c"/></marker>
+        <marker id="s2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#d9a13c"/></marker>
+        <marker id="s3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#e04f4f"/></marker>
+      </defs>
+
+      <rect x="20" y="75" width="140" height="66" rx="10" fill="#171c24" stroke="#2a3341"/>
+      <text x="90" y="104" fill="#eef2f7" font-size="13.5" text-anchor="middle" font-weight="700">Epic in</text>
+      <text x="90" y="121" fill="#9aa7b8" font-size="10.5" text-anchor="middle">the business ask</text>
+      <path d="M 160 108 H 208" stroke="#5f6b7c" stroke-width="1.6" fill="none" marker-end="url(#s1)"/>
+
+      <!-- the argue loop -->
+      <rect x="210" y="30" width="470" height="160" rx="14" fill="none" stroke="#d9a13c" stroke-dasharray="6 5"/>
+      <text x="445" y="22" fill="#d9a13c" font-size="11" text-anchor="middle" letter-spacing="2">THE ARGUE LOOP ↺ capped · every round logged</text>
+
+      <rect x="240" y="75" width="180" height="66" rx="10" fill="#171c24" stroke="#5b9dd9"/>
+      <text x="330" y="100" fill="#eef2f7" font-size="13.5" text-anchor="middle" font-weight="700">AI drafts &amp; asks</text>
+      <text x="330" y="118" fill="#9aa7b8" font-size="10.5" text-anchor="middle">questions · plan · revision</text>
+
+      <rect x="470" y="75" width="180" height="66" rx="10" fill="#171c24" stroke="#d9a13c"/>
+      <text x="560" y="100" fill="#eef2f7" font-size="13.5" text-anchor="middle" font-weight="700">Human pushes back</text>
+      <text x="560" y="118" fill="#9aa7b8" font-size="10.5" text-anchor="middle">answers · edits · feedback</text>
+
+      <path d="M 420 90 H 468" stroke="#5f6b7c" stroke-width="1.6" fill="none" marker-end="url(#s1)"/>
+      <path d="M 468 126 H 422" stroke="#d9a13c" stroke-width="1.6" fill="none" marker-end="url(#s2)"/>
+
+      <path d="M 680 108 H 738" stroke="#e04f4f" stroke-width="1.8" fill="none" marker-end="url(#s3)"/>
+      <rect x="740" y="65" width="200" height="86" rx="12" fill="rgba(224,79,79,.08)" stroke="#e04f4f" stroke-width="2"/>
+      <text x="840" y="95" fill="#ff8e6e" font-size="13" text-anchor="middle" font-weight="800">GATE 1 — human signs</text>
+      <text x="840" y="114" fill="#eef2f7" font-size="11.5" text-anchor="middle">what "done" means</text>
+      <text x="840" y="131" fill="#9aa7b8" font-size="10.5" text-anchor="middle">named · noted · locked</text>
+
+      <text x="480" y="210" fill="#5f6b7c" font-size="11" text-anchor="middle">The loop's only product is a definition of success. Not code — signed, testable acceptance criteria.</text>
+    </svg>
+    </div>
+
+    <div class="vjoin">
+      <div class="stem"></div><div class="cap">▼</div>
+      <div class="lbl"><b>THE CONTRACT</b> — signed acceptance criteria in <code>plan.json</code> ·
+      upstream ends by producing it · downstream cannot end until it satisfies it · locked after sign-off</div>
+      <div class="cap">▼</div>
+    </div>
+
+    <div class="sub-h"><span class="n">2</span><h3>Downstream loop — build until "done" is provably met</h3><span class="b plan">PLANNED · Sprint 2</span></div>
+    <div class="svgwrap">
+    <svg viewBox="0 0 960 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Downstream loop, simplified">
+      <rect x="20" y="75" width="150" height="66" rx="10" fill="#171c24" stroke="#5b9dd9"/>
+      <text x="95" y="100" fill="#eef2f7" font-size="13" text-anchor="middle" font-weight="700">One criterion</text>
+      <text x="95" y="118" fill="#9aa7b8" font-size="10.5" text-anchor="middle">from the contract</text>
+      <path d="M 170 108 H 218" stroke="#5f6b7c" stroke-width="1.6" fill="none" marker-end="url(#s1)"/>
+
+      <!-- the build loop -->
+      <rect x="220" y="30" width="430" height="160" rx="14" fill="none" stroke="#3a4556" stroke-dasharray="6 5"/>
+      <text x="435" y="22" fill="#9aa7b8" font-size="11" text-anchor="middle" letter-spacing="2">THE BUILD LOOP ↺ until green · capped tries</text>
+
+      <rect x="250" y="75" width="170" height="66" rx="10" fill="rgba(224,79,79,.08)" stroke="#e04f4f"/>
+      <text x="335" y="100" fill="#eef2f7" font-size="13.5" text-anchor="middle" font-weight="700">Failing test first</text>
+      <text x="335" y="118" fill="#ff8e6e" font-size="10.5" text-anchor="middle">RED — written from the criterion</text>
+
+      <rect x="450" y="75" width="170" height="66" rx="10" fill="#171c24" stroke="#2a3341"/>
+      <text x="535" y="100" fill="#eef2f7" font-size="13.5" text-anchor="middle" font-weight="700">Code until it passes</text>
+      <text x="535" y="118" fill="#9aa7b8" font-size="10.5" text-anchor="middle">GREEN — full suite must stay green</text>
+
+      <path d="M 420 90 H 448" stroke="#5f6b7c" stroke-width="1.6" fill="none" marker-end="url(#s1)"/>
+      <path d="M 448 126 H 422" stroke="#e04f4f" stroke-width="1.6" fill="none" stroke-dasharray="5 4" marker-end="url(#s3)"/>
+
+      <path d="M 650 108 H 688" stroke="#5f6b7c" stroke-width="1.6" fill="none" marker-end="url(#s1)"/>
+      <rect x="690" y="75" width="120" height="66" rx="10" fill="rgba(79,174,124,.08)" stroke="#4fae7c"/>
+      <text x="750" y="100" fill="#eef2f7" font-size="13" text-anchor="middle" font-weight="700">Contract met?</text>
+      <text x="750" y="118" fill="#4fae7c" font-size="10.5" text-anchor="middle">the goal, not just tests</text>
+
+      <path d="M 810 108 H 838" stroke="#e04f4f" stroke-width="1.8" fill="none" marker-end="url(#s3)"/>
+      <rect x="840" y="65" width="105" height="86" rx="12" fill="rgba(224,79,79,.08)" stroke="#e04f4f" stroke-width="2"/>
+      <text x="892" y="98" fill="#ff8e6e" font-size="12.5" text-anchor="middle" font-weight="800">GATE 2</text>
+      <text x="892" y="116" fill="#eef2f7" font-size="10.5" text-anchor="middle">human approves</text>
+      <text x="892" y="131" fill="#9aa7b8" font-size="10.5" text-anchor="middle">the release</text>
+
+      <text x="480" y="210" fill="#5f6b7c" font-size="11" text-anchor="middle">Tries are capped. Cap hit → the run reports its failures — partial work is never dressed up as success.</text>
+    </svg>
+    </div>
+
+    <div class="strip" style="margin-top:18px">
+      <div class="who"><div class="t">🔒 Why the contract sits between them</div>
+        <div class="d">Downstream never reinterprets what "done" means, and upstream cannot quietly change it
+        after sign-off. If the criteria turn out wrong, the fix is a <b>new upstream round, on the record</b> —
+        not a downstream improvisation.</div></div>
+      <div class="who"><div class="t">⚖️ Why the same shape twice</div>
+        <div class="d">Both loops kill the same failure: <b>a generator grading its own homework</b>. The model
+        that wrote the plan doesn't approve it — the validator and a human do. The step that wrote the code
+        doesn't declare it done — the tests and the criteria check do.</div></div>
+      <div class="who"><div class="t">🧑 Why the human is a node, not a spectator</div>
+        <div class="d">Upstream: answers, shapes, signs. Downstream: steers the agent, approves the release.
+        The human is a working part of both cycles — never someone being shown finished results.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ 7 · RULES ============ -->
+  <section>
+    <div class="sec-head"><span class="sec-num">07</span><h2>The rules no screen can bypass</h2></div>
+    <p class="sec-sub">All enforced server-side, in one engine, with tests — and they answer back in plain
+    language when they refuse.</p>
+    <div class="rules">
+      <div class="rule"><div class="rt">Question cap <span class="b live">LIVE</span></div>
+        <div class="rd">Two clarification rounds, then the model must plan.</div></div>
+      <div class="rule"><div class="rt">Story quality bar <span class="b live">LIVE</span></div>
+        <div class="rd">No story without testable criteria, target component, impact note, flag decision and rollback plan.</div></div>
+      <div class="rule"><div class="rt">Skills bind humans too <span class="b live">LIVE</span></div>
+        <div class="rd">Roster-only, stream-matched — for the AI and the reviewer alike.</div>
+        <div class="quote">"Sofia Marchetti covers none of S7-INT-3's streams — assignment is by skill, for humans too."</div></div>
+      <div class="rule"><div class="rt">Coverage is computed <span class="b live">LIVE</span></div>
+        <div class="rd">Requirement → story mapping is calculated from ids, never believed.</div></div>
+      <div class="rule"><div class="rt">Approval locks <span class="b live">LIVE</span></div>
+        <div class="rd">After sign-off, every edit path is refused, naming the approver.</div></div>
+      <div class="rule"><div class="rt">Revisions are capped <span class="b live">LIVE</span></div>
+        <div class="rd">Two feedback revisions, each re-validated. Answered assumptions never burn the cap.</div></div>
+      <div class="rule"><div class="rt">Decisions leave a trail <span class="b live">LIVE</span></div>
+        <div class="rd">Every human action is a timestamped log entry.</div></div>
+      <div class="rule"><div class="rt">Dependency order <span class="b spec">DESIGNED</span></div>
+        <div class="rd">Nothing schedules before what it depends on — checked on move, re-checked at sign-off.</div></div>
+      <div class="rule"><div class="rt">Provenance on everything <span class="b live">LIVE</span></div>
+        <div class="rd">LIVE AI · REPLAYED AI · STAGED · human-shaped. Prepared work is never dressed as live.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ 8 · ROADMAP ============ -->
+  <section>
+    <div class="sec-head"><span class="sec-num">08</span><h2>Where it stands — the path to deployment</h2></div>
+    <p class="sec-sub">Every sprint ends with a runnable demo beat. The downstream lane deliberately does not
+    depend on live model access — if keys never arrive, replay still runs the whole story offline.</p>
+    <div class="timeline">
+      <div class="tl done"><div class="bar"></div><div class="tt">Sprint 0 · done</div>
+        <div class="td">Foundation: LLM gateway, prompt layers, telemetry, contract, console with a blocking gate.</div></div>
+      <div class="tl done"><div class="bar"></div><div class="tt">Intake · live now</div>
+        <div class="td">Epic → clarify → draft → human shaping → revision → signed lock. Real calls, 82 tests green offline.</div></div>
+      <div class="tl now"><div class="bar"></div><div class="tt">Next · artifact plane</div>
+        <div class="td">§ 03 built: sessions as files, plan.json / plan.md at sign-off, inline text editing, dependency checks, history.</div></div>
+      <div class="tl"><div class="bar"></div><div class="tt">Then · downstream lane</div>
+        <div class="td">§ 04 built: routing, the skill layer, the red→green loop, Gate 2, deploy-dark. One task traverses the whole lane.</div></div>
+      <div class="tl"><div class="bar"></div><div class="tt">Then · resilience &amp; scale</div>
+        <div class="td">Stage reuse + resume · committed recordings (fresh clone, zero keys) · enhancement lane · KPI scorecard.</div></div>
+    </div>
+  </section>
+
+  <p class="footnote">MapleSure Insurance is a fictional insurer. All data in this document and the system it
+  describes is synthetic — no client data, PII, or client-identifiable information. Statuses are labelled
+  honestly: LIVE is demonstrated, DESIGNED is specified, PLANNED is intent.</p>
+
+</div>
+</body>
+</html>
